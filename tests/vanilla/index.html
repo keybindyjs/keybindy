@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/@keybindy/core@latest/dist/keybindy.min.js"></script>
+    <script>
+      const manager = new Keybindy();
+      console.log(manager);
+      manager.register(["ctrl", "shift", "k"], () => {
+        console.log("ctrl + shift + k");
+      });
+      manager.onTyping(({ key, event }) => {
+        console.log(key, event);
+      });
+    </script>
+  </body>
+</html>

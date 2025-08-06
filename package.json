@@ -1,0 +1,28 @@
+{
+  "name": "keybindy",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "build": "pnpm --filter \"./packages/**\" build",
+    "test": "pnpm --filter \"./packages/**\" test",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "changeset publish",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.29.5",
+    "@changesets/types": "^6.1.0",
+    "@eslint/js": "^9.32.0",
+    "@types/node": "^24.2.0",
+    "eslint": "^9.32.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.3",
+    "globals": "^16.3.0",
+    "jiti": "^2.5.1",
+    "prettier": "^3.6.2",
+    "tsup": "^8.5.0",
+    "typescript-eslint": "^8.39.0"
+  }
+}
