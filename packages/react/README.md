@@ -109,27 +109,27 @@ A powerful hook that gives you full control over the shortcut system via the Sho
 
 ##### Available methods
 
-| Method                                                                | Description                                  |
-| --------------------------------------------------------------------- | -------------------------------------------- |
-| [`register()`](https://github.com/keybindy/core#register)             | Register a shortcut                          |
-| [`unregister()`](https://github.com/keybindy/core#unregister)         | Unregister a shortcut                        |
-| [`enable()`](https://github.com/keybindy/core#enable--disable--toggle)                 | Enable a specific shortcut                   |
-| [`disable()`](https://github.com/keybindy/core#enable--disable--toggle)               | Disable a specific shortcut                  |
-| [`toggle()`](https://github.com/keybindy/core#enable--disable--toggle)                 | Toggle a shortcut on/off                     |
-| [`enableAll()`](https://github.com/keybindy/core#enableall--disableall)           | Enable all shortcuts (global or scoped)      |
-| [`disableAll()`](https://github.com/keybindy/core#enableall--disableall)         | Disable all shortcuts (global or scoped)     |
-| [`setScope()`](https://github.com/keybindy/core#setactivescope)       | Set the active scope                         |
-| [`resetScope()`](https://github.com/keybindy/core#resetScope)         | Reset to default scope                       |
-| [`getScopes()`](https://github.com/keybindy/core#getScopes)           | Get all defined scopes                       |
-| [`getActiveScope()`](https://github.com/keybindy/core#getActiveScope) | Get the current active scope                 |
-| [`popScope()`](https://github.com/keybindy/core#popScope)             | Remove the top scope from the scope stack    |
-| [`pushScope()`](https://github.com/keybindy/core#pushScope)           | Push a new scope onto the scope stack        |
-| [`getCheatSheet()`](https://github.com/keybindy/core#getCheatsheet)   | Retrieve all shortcuts (optionally by scope) |
-| [`onTyping()`](https://github.com/keybindy/core#onTyping)             | Listen to every key press                    |
-| [`destroy()`](https://github.com/keybindy/core#destroy)               | Tear down the current manager instance       |
-| [`clear()`](https://github.com/keybindy/core#clear)                   | Unregister all shortcuts                     |
-| [`getScopeInfo()`](https://github.com/keybindy/core#getScopeInfo)     | Retrieve metadata about a specific scope     |
-| [`isScopeActive()`](https://github.com/keybindy/core#isScopeActive)   | Check if a scope is currently active         |
+| Method                                                                   | Description                                  |
+| ------------------------------------------------------------------------ | -------------------------------------------- |
+| [`register()`](https://github.com/keybindy/core#register)                | Register a shortcut                          |
+| [`unregister()`](https://github.com/keybindy/core#unregister)            | Unregister a shortcut                        |
+| [`enable()`](https://github.com/keybindy/core#enable--disable--toggle)   | Enable a specific shortcut                   |
+| [`disable()`](https://github.com/keybindy/core#enable--disable--toggle)  | Disable a specific shortcut                  |
+| [`toggle()`](https://github.com/keybindy/core#enable--disable--toggle)   | Toggle a shortcut on/off                     |
+| [`enableAll()`](https://github.com/keybindy/core#enableall--disableall)  | Enable all shortcuts (global or scoped)      |
+| [`disableAll()`](https://github.com/keybindy/core#enableall--disableall) | Disable all shortcuts (global or scoped)     |
+| [`setScope()`](https://github.com/keybindy/core#setactivescope)          | Set the active scope                         |
+| [`resetScope()`](https://github.com/keybindy/core#resetScope)            | Reset to default scope                       |
+| [`getScopes()`](https://github.com/keybindy/core#getScopes)              | Get all defined scopes                       |
+| [`getActiveScope()`](https://github.com/keybindy/core#getActiveScope)    | Get the current active scope                 |
+| [`popScope()`](https://github.com/keybindy/core#popScope)                | Remove the top scope from the scope stack    |
+| [`pushScope()`](https://github.com/keybindy/core#pushScope)              | Push a new scope onto the scope stack        |
+| [`getCheatSheet()`](https://github.com/keybindy/core#getCheatsheet)      | Retrieve all shortcuts (optionally by scope) |
+| [`onTyping()`](https://github.com/keybindy/core#onTyping)                | Listen to every key press                    |
+| [`destroy()`](https://github.com/keybindy/core#destroy)                  | Tear down the current manager instance       |
+| [`clear()`](https://github.com/keybindy/core#clear)                      | Unregister all shortcuts                     |
+| [`getScopeInfo()`](https://github.com/keybindy/core#getScopeInfo)        | Retrieve metadata about a specific scope     |
+| [`isScopeActive()`](https://github.com/keybindy/core#isScopeActive)      | Check if a scope is currently active         |
 
 > _All methods mirror `@keybindy/core` with a React-friendly API._
 

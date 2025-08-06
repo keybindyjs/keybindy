@@ -16,9 +16,9 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
-    
+
     "outDir": "dist",
-    
+
     "noEmit": false,
     "noEmitOnError": true
   },

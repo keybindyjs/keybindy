@@ -15,14 +15,24 @@
     "@changesets/cli": "^2.29.5",
     "@changesets/types": "^6.1.0",
     "@eslint/js": "^9.32.0",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-typescript": "^12.1.4",
+    "@testing-library/jest-dom": "^6.6.4",
+    "@testing-library/react": "^16.3.0",
     "@types/node": "^24.2.0",
+    "@vitest/ui": "^3.2.4",
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.3",
     "globals": "^16.3.0",
+    "happy-dom": "^18.0.1",
     "jiti": "^2.5.1",
     "prettier": "^3.6.2",
-    "tsup": "^8.5.0",
-    "typescript-eslint": "^8.39.0"
+    "rollup-plugin-dts": "^6.2.1",
+    "typescript-eslint": "^8.39.0",
+    "vitest": "^1.6.1"
+  },
+  "dependencies": {
+    "rollup": "^4.46.2"
   }
 }

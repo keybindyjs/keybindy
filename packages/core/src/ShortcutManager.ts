@@ -99,9 +99,9 @@ export class ShortcutManager extends ScopeManager {
   private handleKeyDown = (e: KeyboardEvent) => {
     const key = normalizeKey(e.code).toLowerCase();
     const now = Date.now();
-    
+
     if (!e.repeat) {
-        this.pressedKeys.add(key);
+      this.pressedKeys.add(key);
     }
 
     this.typingEmitter.emit({ key: e.key, event: e });
@@ -154,7 +154,8 @@ export class ShortcutManager extends ScopeManager {
             sequentialFired = true;
           }
         }
-      } else { // Simultaneous
+      } else {
+        // Simultaneous
         if (allMatch && shortcut.options?.triggerOn === 'keydown') {
           if (e.repeat && !shortcut.options.repeat) continue;
           simultaneousMatches.push(shortcut);
@@ -282,7 +283,7 @@ export class ShortcutManager extends ScopeManager {
             scope: options?.scope || this.getActiveScope(),
             hold: options?.hold || false,
             triggerOn: options?.triggerOn || 'keydown',
-            repeat: options?.repeat === true, 
+            repeat: options?.repeat === true,
           },
           enabled: true,
         });

@@ -169,16 +169,16 @@ manager.register(
 
 The `options` object allows you to customize the behavior of a shortcut.
 
-| Option          | Type      | Default     | Description                                                                                                                                                              |
-| --------------- | --------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `scope`         | `string`  | `"global"`  | The scope in which the shortcut is active.                                                                                                                               |
-| `preventDefault`| `boolean` | `false`     | If `true`, calls `event.preventDefault()` to block the browser's default action.                                                                                         |
-| `sequential`    | `boolean` | `false`     | If `true`, treats the key combination as a sequence (e.g., `G` then `H`).                                                                                                |
-| `sequenceDelay` | `number`  | `1000`      | The maximum time (in ms) between key presses for a sequential shortcut.                                                                                                  |
-| `triggerOn`     | `string`  | `"keydown"` | For simultaneous shortcuts, specifies whether to trigger on `"keydown"` or `"keyup"`.                                                                                    |
-| `hold`          | `boolean` | `false`     | If `true`, treats the shortcut as a "hold" action. The handler will be called on both key down and key up with a `state` argument (`"down"` or `"up"`).                  |
-| `repeat`        | `boolean` | `false`     | If `true`, allows the shortcut to be repeatedly fired when the key is held down. By default, shortcuts only fire once.                                                    |
-| `data`          | `object`  | `{}`        | An object for any custom metadata you want to associate with the shortcut, useful for building features like cheat sheets.                                               |
+| Option           | Type      | Default     | Description                                                                                                                                             |
+| ---------------- | --------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scope`          | `string`  | `"global"`  | The scope in which the shortcut is active.                                                                                                              |
+| `preventDefault` | `boolean` | `false`     | If `true`, calls `event.preventDefault()` to block the browser's default action.                                                                        |
+| `sequential`     | `boolean` | `false`     | If `true`, treats the key combination as a sequence (e.g., `G` then `H`).                                                                               |
+| `sequenceDelay`  | `number`  | `1000`      | The maximum time (in ms) between key presses for a sequential shortcut.                                                                                 |
+| `triggerOn`      | `string`  | `"keydown"` | For simultaneous shortcuts, specifies whether to trigger on `"keydown"` or `"keyup"`.                                                                   |
+| `hold`           | `boolean` | `false`     | If `true`, treats the shortcut as a "hold" action. The handler will be called on both key down and key up with a `state` argument (`"down"` or `"up"`). |
+| `repeat`         | `boolean` | `false`     | If `true`, allows the shortcut to be repeatedly fired when the key is held down. By default, shortcuts only fire once.                                  |
+| `data`           | `object`  | `{}`        | An object for any custom metadata you want to associate with the shortcut, useful for building features like cheat sheets.                              |
 
 ---
 
@@ -441,10 +441,10 @@ These are special shortcuts that trigger on both key down and key up. They are i
 
 ```ts
 manager.register(
-  ['Ctrl', 'Shift'], 
+  ['Ctrl', 'Shift'],
   (event, state) => {
     console.log(`Mic is ${state === 'down' ? 'on' : 'off'}`);
-  }, 
+  },
   { hold: true }
 );
 ```

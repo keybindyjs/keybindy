@@ -64,7 +64,7 @@ type KeybindyProps = {
   /**
    * The content that will be rendered inside the Shortcut component.
    */
-  children: React.ReactNode;
+  children?: React.ReactNode;
 };
 
 /**
@@ -115,7 +115,11 @@ export const Keybindy: React.FC<KeybindyProps> = ({
   const prevScope = React.useRef<string | null>(null);
 
   React.useEffect(() => {
-    prevScope.current = manager.getActiveScope();
+    if (!manager) {
+      return;
+    }
+
+    prevScope.current = manager.getActiveScope() ?? 'global';
 
     // Add scope if doesn't exist
     if (!getScopes()?.includes(scope)) {
@@ -132,6 +136,8 @@ export const Keybindy: React.FC<KeybindyProps> = ({
 
     if (disabled) {
       manager.disableAll(scope);
+    } else {
+      manager.enableAll(scope);
     }
 
     return () => {
@@ -145,7 +151,7 @@ export const Keybindy: React.FC<KeybindyProps> = ({
 
       popScope();
     };
-  }, [scope, JSON.stringify(shortcuts)]);
+  }, [scope, shortcuts, manager, disabled]);
 
   return <>{children}</>;
 };

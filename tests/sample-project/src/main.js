@@ -1,14 +1,14 @@
-import "./style.css";
-import ShortcutManager from "../../../packages/core/src";
+import './style.css';
+import ShortcutManager from '../../../packages/core/src';
 // import ShortcutManager from "@keybindy/core";
 
 // Create a shortcut manager instance
 const manager = new ShortcutManager();
 
 manager.register(
-  ["Ctrl", "Shift"],
+  ['Ctrl', 'Shift'],
   (e, s) => {
-    console.log("Sequential GH shortcut triggered!", s);
+    console.log('Sequential GH shortcut triggered!', s);
   },
   {
     hold: true,
@@ -16,42 +16,42 @@ manager.register(
 );
 
 manager.register(
-  ["D"],
-  (e) => {
-    console.log("D key released!");
+  ['D'],
+  e => {
+    console.log('D key released!');
   },
   {
-    triggerOn: "keyup",
+    triggerOn: 'keyup',
   }
 );
 
 manager.register(
-  ["D"],
-  (e) => {
-    console.log("D key pressed!");
+  ['D'],
+  e => {
+    console.log('D key pressed!');
   },
   {
-    triggerOn: "keydown",
+    triggerOn: 'keydown',
   }
 );
 
-manager.register(["Enter"], () => {
-  console.log("Enter key pressed!");
+manager.register(['Enter'], () => {
+  console.log('Enter key pressed!');
 });
 
-manager.register(["g", "h"], () => {
-  console.log("Simultaneous GH shortcut triggered!");
+manager.register(['g', 'h'], () => {
+  console.log('Simultaneous GH shortcut triggered!');
 });
 
-manager.register(["ctrl", "s"], (e) => {
+manager.register(['ctrl', 's'], e => {
   e.preventDefault();
-  console.log("Sequential CTRL+S shortcut triggered!");
+  console.log('Sequential CTRL+S shortcut triggered!');
 });
 
 manager.register(
-  ["g", "g", "h", "h"],
+  ['g', 'g', 'h', 'h'],
   () => {
-    console.log("Sequential GG shortcut triggered!");
+    console.log('Sequential GG shortcut triggered!');
   },
   {
     sequential: true,
@@ -60,29 +60,29 @@ manager.register(
 );
 
 manager.register(
-  ["s", "p"],
+  ['s', 'p'],
   () => {
-    console.log("Sequential SP shortcut triggered!");
+    console.log('Sequential SP shortcut triggered!');
   },
   {
     sequential: true,
     sequenceDelay: 3000,
-    scope: "nono",
+    scope: 'nono',
   }
 );
 
 manager.register(
-  ["l", "g"],
+  ['l', 'g'],
   () => {
-    console.log("Sequential LG shortcut triggered!");
+    console.log('Sequential LG shortcut triggered!');
   },
   {
     sequential: true,
     sequenceDelay: 3000,
-    scope: "lg",
+    scope: 'lg',
   }
 );
 
-manager.setActiveScope("global");
+manager.setActiveScope('global');
 // manager.disableAll();
 // Get all methods (including inherited ones)

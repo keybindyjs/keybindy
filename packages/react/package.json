@@ -1,35 +1,33 @@
 {
   "name": "@keybindy/react",
-  "version": "1.0.3",
+  "version": "1.1.4",
   "description": "Keybindy for React: Simple, scoped keyboard shortcuts that require little setup. designed to smoothly blend in with your React applications, allowing for robust keybinding functionality without the overhead.",
   "author": {
     "name": "PRASSamin",
-    "url": "https://github.com/prasssamin"
+    "url": "https://github.com/prassamin"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/keybindy/react.git"
+    "url": "git+https://github.com/keybindyjs/keybindy.git"
   },
-  "homepage": "https://github.com/keybindy/react",
+  "homepage": "https://github.com/keybindyjs/keybindy",
   "bugs": {
-    "url": "https://github.com/keybindy/react/issues"
+    "url": "https://github.com/keybindyjs/keybindy/issues"
   },
   "license": "MIT",
   "sideEffects": false,
   "type": "module",
-  "main": "dist/index.cjs",
-  "module": "dist/index.mjs",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "require": "./dist/index.cjs",
-      "import": "./dist/index.mjs"
+      "require": "./dist/index.js",
+      "import": "./dist/index.js"
     }
   },
   "files": [
-    "dist/**/*.js",
-    "dist/**/*.d.ts",
-    "!dist/**/*.map",
+    "dist/**/*",
     "package.json",
     "LICENSE.md",
     "README.md"
@@ -48,12 +46,12 @@
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
     "publish": "npm publish --access public",
     "prebuild": "rm -rf dist",
-    "build": "tsup",
-    "dev": "tsup -w"
+    "build": "rollup -c",
+    "dev": "rollup -c -w",
+    "test": "vitest"
   },
   "devDependencies": {
     "@types/react": "^19.1.2",
-    "prettier": "^3.5.3",
     "tslib": "^2.8.1"
   },
   "peerDependencies": {

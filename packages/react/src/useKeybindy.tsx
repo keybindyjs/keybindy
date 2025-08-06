@@ -10,6 +10,19 @@ import type {
 
 let sharedInstance: ShortcutManager | null = null;
 
+const getSharedInstance = (options?: {
+  onShortcutFired?: (info: Shortcut) => void;
+  silent?: boolean;
+}) => {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  if (!sharedInstance) {
+    sharedInstance = new ShortcutManager(options);
+  }
+  return sharedInstance;
+};
+
 type UseKeybindyReturn = {
   register: (
     keys: Keys[] | Keys[][],
@@ -28,57 +41,41 @@ type UseKeybindyReturn = {
     | undefined;
   destroy: () => void;
   getScopeInfo: (scope?: string) => any;
-  getActiveScope: () => string;
+  getActiveScope: () => string | undefined;
   popScope: () => void;
   pushScope: (scope: string) => void;
   resetScope: () => void;
-  getScopes: () => string[];
+  getScopes: () => string[] | undefined;
   isScopeActive: (scope: string) => boolean | undefined;
   onTyping: (callback: (payload: { key: string; event: KeyboardEvent }) => void) => void;
   enableAll: (scope?: string) => void;
   clear: () => void;
   disableAll: (scope?: string) => void;
-  manager: ShortcutManager;
+  manager: ShortcutManager | null;
 };
 
 /**
  * React hook to manage keyboard shortcuts using a shared instance of `ShortcutManager`.
- * Automatically cleans up shortcuts registered by the component on unmount.
+ * This hook is safe for server-side rendering (SSR) and will only initialize the manager on the client.
  *
  * @param {Object} config - Configuration object.
  * @param {boolean} [config.logs=false] - Whether to enable debug logs in the console.
+ * @param {(info: Shortcut) => void} [config.onShortcutFired] - Callback for when a shortcut is fired.
  *
- * @returns {Object} Object containing shortcut management methods.
- *
- * @example
- * const {
- *   register,
- *   setScope,
- *   getCheatSheet,
- * } = useKeybindy({ logs: true });
- *
- * useEffect(() => {
- *   register(['ctrl', 's'], () => save(), {
- *     scope: 'editor',
- *     data: { description: 'Save document' }
- *   });
- *   setScope('editor');
- * }, []);
+ * @returns {Object} Object containing shortcut management methods and the manager instance (null on server).
  */
 export const useKeybindy = ({
   logs = false,
   onShortcutFired,
 }: { logs?: boolean; onShortcutFired?: (info: Shortcut) => void } = {}): UseKeybindyReturn => {
-  const managerRef = React.useRef<ShortcutManager>(null);
-  const registeredIds = React.useRef<Set<string>>(new Set());
+  const [manager, setManager] = React.useState<ShortcutManager | null>(null);
 
-  if (!sharedInstance) {
-    sharedInstance = new ShortcutManager({ onShortcutFired, silent: !logs });
-  }
-
-  if (!managerRef.current) {
-    managerRef.current = sharedInstance;
-  }
+  React.useEffect(() => {
+    if (!manager) {
+      const instance = getSharedInstance({ onShortcutFired, silent: !logs });
+      setManager(instance);
+    }
+  }, []);
 
   const log = (...args: any[]) => {
     if (logs) console.log('[Keybindy]', ...args);
@@ -88,214 +85,160 @@ export const useKeybindy = ({
     if (logs) console.warn('[Keybindy]', ...args);
   };
 
-  /**
-   * Registers a new keyboard shortcut.
-   *
-   * @param {Keys[] | Keys[][]} keys - Key combination(s) to listen for.
-   * @param {ShortcutHandler | HoldShortcutHandler} handler - Callback function to invoke when shortcut is triggered.
-   * @param {ShortcutOptions} [options] - Optional configuration, including scope and metadata.
-   */
   const register = React.useCallback(
     (
       keys: Keys[] | Keys[][],
       handler: ShortcutHandler | HoldShortcutHandler,
       options?: ShortcutOptions
     ) => {
+      if (!manager) return;
       if (keys.length === 0) {
         warn('No keys provided to register');
         return;
       }
       const id = options?.data?.id;
-      if (id) registeredIds.current.add(id);
       log('Registered:', id ?? keys);
-      managerRef.current?.register(keys, handler, options);
+      manager.register(keys, handler, options);
     },
-    []
+    [manager]
   );
 
-  /**
-   * Unregisters a previously registered keyboard shortcut.
-   *
-   * @param {Keys[]} keys - Key combination to unregister.
-   * @param {string} [scope] - Optional scope for more targeted unregistration.
-   */
-  const unregister = React.useCallback((keys: Keys[], scope?: string) => {
-    if (keys.length === 0) {
-      warn('No keys provided to unregister');
-      return;
-    }
-    managerRef.current?.unregister(keys, scope);
-    log('Unregistered:', keys);
-  }, []);
+  const unregister = React.useCallback(
+    (keys: Keys[], scope?: string) => {
+      if (!manager) return;
+      if (keys.length === 0) {
+        warn('No keys provided to unregister');
+        return;
+      }
+      manager.unregister(keys, scope);
+      log('Unregistered:', keys);
+    },
+    [manager]
+  );
 
-  /**
-   * Enables a previously disabled shortcut.
-   *
-   * @param {Keys[]} keys - Key combination to enable.
-   * @param {string} [scope] - Optional scope to target a specific set.
-   */
-  const enable = React.useCallback((keys: Keys[], scope?: string) => {
-    if (keys.length === 0) {
-      warn('No keys provided to enable');
-      return;
-    }
-    managerRef.current?.enable(keys, scope);
-    log('Enabled:', keys);
-  }, []);
+  const enable = React.useCallback(
+    (keys: Keys[], scope?: string) => {
+      if (!manager) return;
+      if (keys.length === 0) {
+        warn('No keys provided to enable');
+        return;
+      }
+      manager.enable(keys, scope);
+      log('Enabled:', keys);
+    },
+    [manager]
+  );
 
-  /**
-   * Disables a shortcut so it no longer triggers its handler.
-   *
-   * @param {Keys[]} keys - Key combination to disable.
-   * @param {string} [scope] - Optional scope to target a specific set.
-   */
-  const disable = React.useCallback((keys: Keys[], scope?: string) => {
-    if (keys.length === 0) {
-      warn('No keys provided to disable');
-      return;
-    }
-    managerRef.current?.disable(keys, scope);
-    log('Disabled:', keys);
-  }, []);
+  const disable = React.useCallback(
+    (keys: Keys[], scope?: string) => {
+      if (!manager) return;
+      if (keys.length === 0) {
+        warn('No keys provided to disable');
+        return;
+      }
+      manager.disable(keys, scope);
+      log('Disabled:', keys);
+    },
+    [manager]
+  );
 
-  /**
-   * Toggles a shortcut between enabled and disabled.
-   *
-   * @param {Keys[]} keys - Key combination to toggle.
-   * @param {string} [scope] - Optional scope to target a specific set.
-   */
-  const toggle = React.useCallback((keys: Keys[], scope?: string) => {
-    if (keys.length === 0) {
-      warn('No keys provided to toggle');
-      return;
-    }
-    managerRef.current?.toggle(keys, scope);
-    log('Toggled:', keys);
-  }, []);
+  const toggle = React.useCallback(
+    (keys: Keys[], scope?: string) => {
+      if (!manager) return;
+      if (keys.length === 0) {
+        warn('No keys provided to toggle');
+        return;
+      }
+      manager.toggle(keys, scope);
+      log('Toggled:', keys);
+    },
+    [manager]
+  );
 
-  /**
-   * Returns a list of shortcuts registered in a given scope.
-   *
-   * @param {string} [scope] - The scope to query. Defaults to the active scope.
-   * @returns {Array} List of shortcut definitions.
-   */
-  const getCheatSheet = React.useCallback((scope?: string) => {
-    return managerRef.current?.getCheatSheet(scope);
-  }, []);
+  const getCheatSheet = React.useCallback(
+    (scope?: string) => {
+      return manager?.getCheatSheet(scope);
+    },
+    [manager]
+  );
 
-  /**
-   * Returns the currently active scope.
-   * @returns {string} The active scope.
-   */
   const getActiveScope = React.useCallback(() => {
-    return managerRef.current?.getActiveScope() ?? '';
-  }, []);
+    return manager?.getActiveScope();
+  }, [manager]);
 
-  /**
-   * Disables all shortcuts in the specified scope or all scopes if no scope is provided.
-   * @param scope - The scope to disable shortcuts in.
-   */
-  const disableAll = React.useCallback((scope?: string) => {
-    managerRef.current?.disableAll(scope);
-    log(`Disabled all shortcuts${scope ? ` in scope "${scope}"` : ''}`);
-  }, []);
+  const disableAll = React.useCallback(
+    (scope?: string) => {
+      manager?.disableAll(scope);
+      log(`Disabled all shortcuts${scope ? ` in scope "${scope}"` : ''}`);
+    },
+    [manager]
+  );
 
-  /**
-   * Enables all shortcuts in the specified scope or all scopes if no scope is provided.
-   * @param scope - The scope to enable shortcuts in.
-   */
-  const enableAll = React.useCallback((scope?: string) => {
-    managerRef.current?.enableAll(scope);
-    log(`Enabled all shortcuts${scope ? ` in scope "${scope}"` : ''}`);
-  }, []);
+  const enableAll = React.useCallback(
+    (scope?: string) => {
+      manager?.enableAll(scope);
+      log(`Enabled all shortcuts${scope ? ` in scope "${scope}"` : ''}`);
+    },
+    [manager]
+  );
 
-  /**
-   * Sets the currently active shortcut scope.
-   *
-   * @param {string} scope - The scope name to set as active.
-   */
-  const setScope = React.useCallback((scope: string) => {
-    managerRef.current?.setActiveScope(scope);
-    log('Scope set to:', scope);
-  }, []);
+  const setScope = React.useCallback(
+    (scope: string) => {
+      manager?.setActiveScope(scope);
+      log('Scope set to:', scope);
+    },
+    [manager]
+  );
 
-  /**
-   * Resets the scope stack to the default state.
-   */
   const resetScope = React.useCallback(() => {
-    managerRef.current?.resetScope();
+    manager?.resetScope();
     log('Reset scope');
-  }, []);
+  }, [manager]);
 
-  /**
-   * Returns all scopes in the stack.
-   * @returns An array of scopes.
-   */
   const getScopes = React.useCallback(() => {
-    return managerRef.current?.getScopes() ?? [];
-  }, []);
+    return manager?.getScopes();
+  }, [manager]);
 
-  /**
-   * Checks if the given scope is active.
-   * @param scope - The scope to check.
-   * @returns `true` if the scope is active, `false` otherwise.
-   */
-  const isScopeActive = React.useCallback((scope: string) => {
-    return managerRef.current?.isScopeActive(scope);
-  }, []);
+  const isScopeActive = React.useCallback(
+    (scope: string) => {
+      return manager?.isScopeActive(scope);
+    },
+    [manager]
+  );
 
-  /**
-   * Registers a callback to be called when a key is typed.
-   * @param callback - The callback function to be called.
-   */
   const onTyping = React.useCallback(
     (callback: (payload: { key: string; event: KeyboardEvent }) => void) => {
-      managerRef.current?.onTyping(callback);
+      manager?.onTyping(callback);
     },
-    []
+    [manager]
   );
 
-  /**
-   * Pops the last scope from the scope stack.
-   */
   const popScope = React.useCallback(() => {
-    managerRef.current?.popScope();
-    log('Popped scope, active scope is:', managerRef.current?.getActiveScope());
-  }, []);
+    manager?.popScope();
+    log('Popped scope, active scope is:', manager?.getActiveScope());
+  }, [manager]);
 
-  /**
-   * Pushes a new scope onto the scope stack.
-   * @param scope - The scope to push.
-   */
-  const pushScope = React.useCallback((scope: string) => {
-    managerRef.current?.pushScope(scope);
-    log('Pushed scope:', scope);
-  }, []);
+  const pushScope = React.useCallback(
+    (scope: string) => {
+      manager?.pushScope(scope);
+      log('Pushed scope:', scope);
+    },
+    [manager]
+  );
 
-  /**
-   * Returns internal information about the registered scopes and shortcuts.
-   *
-   * @param {string} [scope] - Optional scope to filter results.
-   * @returns {Object} Scope information.
-   */
-  const getScopeInfo = React.useCallback((scope?: string) => {
-    return managerRef.current?.getScopesInfo(scope);
-  }, []);
+  const getScopeInfo = React.useCallback(
+    (scope?: string) => {
+      return manager?.getScopesInfo(scope);
+    },
+    [manager]
+  );
 
-  /**
-   * Destroys the instance of `ShortcutManager`.
-   * This should be called explicitly when you no longer need the manager.
-   */
   const destroy = () => {
-    managerRef.current?.destroy();
+    manager?.destroy();
   };
 
-  /**
-   * Clears the internal state, removing all pressed keys and event listeners.
-   * This does not unregister shortcuts.
-   */
   const clear = () => {
-    managerRef.current?.clear();
+    manager?.clear();
   };
 
   return {
@@ -318,6 +261,6 @@ export const useKeybindy = ({
     enableAll,
     clear,
     disableAll,
-    manager: managerRef.current,
+    manager,
   };
 };
