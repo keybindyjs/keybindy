@@ -22,10 +22,10 @@ Keyboard shortcuts are essential for a productive user experience, but managing 
 
 This repository is a monorepo managed by [pnpm](https://pnpm.io/). It contains the following packages:
 
-| Package                               | Version                                                                                                         | Description                                                                  |
-| ------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| [`@keybindy/core`](./packages/core)   | [![npm version](https://badge.fury.io/js/@keybindy%2Fcore.svg)](https://www.npmjs.com/package/@keybindy/core)   | The core, framework-agnostic shortcut management library.                    |
-| [`@keybindy/react`](./packages/react) | [![npm version](https://badge.fury.io/js/@keybindy%2Freact.svg)](https://www.npmjs.com/package/@keybindy/react) | React components and hooks for seamless integration with React applications. |
+| Package                               | Version                                                                                                         | Description                                                                  | Docs                               |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------- |
+| [`@keybindy/core`](./packages/core)   | [![npm version](https://badge.fury.io/js/@keybindy%2Fcore.svg)](https://www.npmjs.com/package/@keybindy/core)   | The core, framework-agnostic shortcut management library.                    | [Docs](./packages/core/README.md)  |
+| [`@keybindy/react`](./packages/react) | [![npm version](https://badge.fury.io/js/@keybindy%2Freact.svg)](https://www.npmjs.com/package/@keybindy/react) | React components and hooks for seamless integration with React applications. | [Docs](./packages/react/README.md) |
 
 ## Installation
 
