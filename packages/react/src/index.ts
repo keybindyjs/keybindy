@@ -1,6 +1,8 @@
-export * from './Keybindy';
-export * from './ShortcutLabel';
-export * from './useKeybindy';
+export { Keybindy } from './Keybindy';
+export { ShortcutLabel } from './ShortcutLabel';
+export { useKeybindy } from './useKeybindy';
 
-// types from core
-export type { Keys, ShortcutOptions, ShortcutHandler, Shortcut, KeyBinding } from '@keybindy/core';
+// types
+export type { KeybindyShortcut } from './types';
+// Re-export essential types from the core package
+export type { Keys, ShortcutOptions, Shortcut } from '@keybindy/core';

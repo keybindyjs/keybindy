@@ -1,12 +1,24 @@
 # @keybindy/react
 
-## 1.1.1
+## [1.1.1 - 1.1.5] - 2025-08-06
 
 ### Patch Changes
 
+- **Bug Fix**: Fixed a critical bug where `hold`
+  shortcuts would fail to trigger their `keyup` event if the
+  handler updated component state, causing a re-render. The
+  `<Keybindy>` component is now internally resilient, making
+  stateful `hold` actions stable and reliable.
+- **DX**: Improved the developer experience by refining
+  and centralizing TypeScript types. The ambiguous
+  `ShortcutDefinition` type has been renamed to the more
+  intuitive `KeybindyShortcut`.
+- **Performance**: Wrapped the `<Keybindy>` component in
+  `React.memo` to prevent unnecessary re-renders and improve
+  performance.
 - fixed package.json
 - Updated dependencies
-  - @keybindy/core@1.1.1
+  - @keybindy/core@1.1.4
 
 ## 1.1.0
 

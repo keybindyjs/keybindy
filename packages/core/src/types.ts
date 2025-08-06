@@ -260,6 +260,8 @@ export interface Shortcut {
 }
 
 /**
- * Single or sequential key combinations for a shortcut.
+ * Defines the key combinations that can trigger a shortcut.
+ * It can be a single combination (e.g., `['Ctrl', 'S']`) or multiple
+ * combinations for the same shortcut (e.g., `[['Ctrl', 'K'], ['Meta', 'K']]`).
  */
-export type KeyBinding = Keys[] | Keys[][];
+export type ShortcutBinding = Keys[] | Keys[][];

@@ -1,10 +1,13 @@
 # @keybindy/core
 
-## 1.1.1
+## [1.1.1 - 1.1.4] - 2025-08-06
 
 ### Patch Changes
 
+- **Types**: Refined and curated the exported TypeScript types to provide a cleaner, more focused public API for developers. The internal `KeyBinding` type was renamed to `ShortcutBinding` for better clarity.
 - fixed package.json
+- Updated dependencies
+  - None
 
 ## [1.1.0] - 2025-08-06
 

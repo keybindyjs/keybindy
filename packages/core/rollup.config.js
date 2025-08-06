@@ -1,6 +1,7 @@
 import typescript from '@rollup/plugin-typescript';
 import resolve from '@rollup/plugin-node-resolve';
 import dts from 'rollup-plugin-dts';
+import terser from '@rollup/plugin-terser';
 
 export default [
   // ESM build
@@ -51,24 +52,24 @@ export default [
   },
 
   // CDN build
-  //   {
-  //     input: 'src/index.ts',
-  //     output: {
-  //       file: 'dist/keybindy.min.js',
-  //       format: 'iife',
-  //       name: 'Keybindy',
-  //       sourcemap: false,
-  //     },
-  //     plugins: [
-  //       resolve(),
-  //       typescript({
-  //         tsconfig: './tsconfig.json',
-  //         declaration: false,
-  //         emitDeclarationOnly: false,
-  //       }),
-  //       terser(),
-  //     ],
-  //   },
+    {
+      input: 'src/index.ts',
+      output: {
+        file: 'dist/keybindy.min.js',
+        format: 'iife',
+        name: 'Keybindy',
+        sourcemap: false,
+      },
+      plugins: [
+        resolve(),
+        typescript({
+          tsconfig: './tsconfig.json',
+          declaration: false,
+          emitDeclarationOnly: false,
+        }),
+        terser(),
+      ],
+    },
 
   // Bundle .d.ts entry file
   {

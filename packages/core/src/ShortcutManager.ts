@@ -3,7 +3,7 @@ import type {
   ShortcutHandler,
   ShortcutOptions,
   Shortcut,
-  KeyBinding,
+  ShortcutBinding,
   HoldShortcutHandler,
 } from './types';
 import { expandAliases } from './utils/expandAliases';
@@ -254,8 +254,10 @@ export class ShortcutManager extends ScopeManager {
    * @param handler - Callback function to execute when shortcut is triggered.
    * @param options - Optional configuration including scope, ID, and metadata.
    */
-  register(keys: KeyBinding, handler: ShortcutHandler, options?: ShortcutOptions) {
-    const bindings: Keys[][] = Array.isArray(keys[0]) ? (keys as Keys[][]) : [keys as Keys[]];
+  register(binding: ShortcutBinding, handler: ShortcutHandler, options?: ShortcutOptions) {
+    const bindings: Keys[][] = Array.isArray(binding[0])
+      ? (binding as Keys[][])
+      : [binding as Keys[]];
 
     const id = options?.data?.id || generateUID();
 

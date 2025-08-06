@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Keybindy, ShortcutLabel, useKeybindy } from '../../../packages/react/src';
+import { Keybindy, ShortcutLabel, useKeybindy } from '@keybindy/react';
 
 function App() {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,9 +16,14 @@ function App() {
       scope="global"
       shortcuts={[
         {
-          keys: ['Ctrl', 'Shift'],
-          handler: () => {
-            setIsOpen(true);
+          keys: ['Ctrl'],
+          handler: (e, state) => {
+            console.log(e)
+            if (state === 'down') {
+              setIsOpen(true);
+            } else {
+              setIsOpen(false);
+            }
           },
           options: {
             hold: true,

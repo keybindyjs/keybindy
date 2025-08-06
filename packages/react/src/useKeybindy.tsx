@@ -1,12 +1,6 @@
 import React from 'react';
 import ShortcutManager from '@keybindy/core';
-import type {
-  Keys,
-  Shortcut,
-  ShortcutHandler,
-  ShortcutOptions,
-  HoldShortcutHandler,
-} from '@keybindy/core';
+import type { Keys, Shortcut, ShortcutHandler, ShortcutOptions } from '@keybindy/core';
 
 let sharedInstance: ShortcutManager | null = null;
 
@@ -24,11 +18,7 @@ const getSharedInstance = (options?: {
 };
 
 type UseKeybindyReturn = {
-  register: (
-    keys: Keys[] | Keys[][],
-    handler: ShortcutHandler | HoldShortcutHandler,
-    options?: ShortcutOptions
-  ) => void;
+  register: (keys: Keys[] | Keys[][], handler: ShortcutHandler, options?: ShortcutOptions) => void;
   unregister: (keys: Keys[], scope?: string) => void;
   enable: (keys: Keys[], scope?: string) => void;
   disable: (keys: Keys[], scope?: string) => void;
@@ -86,11 +76,7 @@ export const useKeybindy = ({
   };
 
   const register = React.useCallback(
-    (
-      keys: Keys[] | Keys[][],
-      handler: ShortcutHandler | HoldShortcutHandler,
-      options?: ShortcutOptions
-    ) => {
+    (keys: Keys[] | Keys[][], handler: ShortcutHandler, options?: ShortcutOptions) => {
       if (!manager) return;
       if (keys.length === 0) {
         warn('No keys provided to register');

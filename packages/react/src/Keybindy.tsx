@@ -1,33 +1,7 @@
 import React from 'react';
-import type {
-  Keys,
-  Shortcut as ShortcutType,
-  ShortcutHandler,
-  ShortcutOptions,
-  HoldShortcutHandler,
-} from '@keybindy/core';
+import type { Keys, Shortcut as ShortcutType, ShortcutHandler } from '@keybindy/core';
 import { useKeybindy } from './useKeybindy';
-
-/**
- * Represents a keyboard shortcut definition.
- */
-type ShortcutDefinition = {
-  /**
-   * The key combination(s) to listen for.
-   * Can be a single array of keys or an array of key combinations.
-   */
-  keys: Keys[] | Keys[][];
-
-  /**
-   * Callback function to invoke when the shortcut is triggered.
-   */
-  handler: ShortcutHandler | HoldShortcutHandler;
-
-  /**
-   * Optional configuration, including scope and other metadata.
-   */
-  options?: Omit<ShortcutOptions, 'scope'>;
-};
+import type { KeybindyShortcut } from './types';
 
 /**
  * Props for the `<Keybindy />` component.
@@ -42,7 +16,7 @@ type KeybindyProps = {
   /**
    * Array of shortcut definitions to register for this scope.
    */
-  shortcuts?: ShortcutDefinition[];
+  shortcuts?: KeybindyShortcut[];
 
   /**
    * Whether the shortcuts should be disabled for this scope.
@@ -67,40 +41,7 @@ type KeybindyProps = {
   children?: React.ReactNode;
 };
 
-/**
- * `<Keybindy />` is a React component that registers keyboard shortcuts within a given scope. It allows
- * users to define custom shortcuts and their associated handlers, while managing scope-based shortcut behavior.
- * The component listens for keyboard events and triggers the registered handler when the corresponding keys are pressed.
- * It also provides an optional callback (`onShortcutFired`) to notify users when a shortcut is triggered.
- *
- * @component
- *
- * @example
- * // Basic usage
- * <Keybindy scope="global" shortcuts={[{ keys: ['ctrl', 's'], handler: saveDocument }]} >
- *   <div>Content with shortcuts</div>
- * </Keybindy>
- *
- * @example
- * // With custom callback for onShortcutFired
- * <Keybindy
- *   scope="editor"
- *   shortcuts={[{ keys: ['ctrl', 'e'], handler: editDocument }]}
- *   onShortcutFired={(info) => console.log('Shortcut fired:', info)}
- * >
- *   <div>Editor with shortcuts</div>
- * </Keybindy>
- *
- * @param {ShortcutProps} props - Props for the Shortcut component.
- * @param {string} props.scope - The scope under which the shortcuts should be active.
- * @param {ShortcutDefinition[]} [props.shortcuts] - An array of shortcut definitions, each containing keys, handler, and options.
- * @param {boolean} [props.disabled=false] - Whether the shortcuts should be disabled for this scope.
- * @param {(info: Shortcut) => void} [props.onShortcutFired] - Optional callback triggered when a shortcut is fired, providing the shortcut info.
- * @param {React.ReactNode} props.children - The children to be rendered inside the component, which can contain any JSX elements.
- *
- * @returns {JSX.Element} The rendered component with registered shortcuts within the provided scope.
- */
-export const Keybindy: React.FC<KeybindyProps> = ({
+const KeybindyComponent: React.FC<KeybindyProps> = ({
   scope = 'global',
   shortcuts = [],
   children,
@@ -112,26 +53,47 @@ export const Keybindy: React.FC<KeybindyProps> = ({
     onShortcutFired,
     logs,
   });
-  const prevScope = React.useRef<string | null>(null);
+
+  // Memoize a stable representation of shortcuts, excluding the handler.
+  // This prevents the effect from re-running unnecessarily.
+  const stableShortcuts = React.useMemo(() => {
+    return shortcuts.map(({ keys, options }) => ({ keys, options }));
+  }, [JSON.stringify(shortcuts.map(s => ({ keys: s.keys, options: s.options })))]);
+
+  // Use a ref to store the latest handlers, preventing re-renders from causing issues.
+  const handlersRef = React.useRef<Record<string, ShortcutHandler>>({});
+
+  React.useEffect(() => {
+    handlersRef.current = shortcuts.reduce(
+      (acc, { keys, handler }) => {
+        const key = JSON.stringify(keys);
+        acc[key] = handler;
+        return acc;
+      },
+      {} as Record<string, ShortcutHandler>
+    );
+  });
 
   React.useEffect(() => {
     if (!manager) {
       return;
     }
 
-    prevScope.current = manager.getActiveScope() ?? 'global';
-
-    // Add scope if doesn't exist
     if (!getScopes()?.includes(scope)) {
       pushScope(scope);
     }
-
-    // Set this scope as active
     setScope(scope);
 
-    // Register all shortcuts for this scope
-    shortcuts.forEach(({ keys, handler, options }) => {
-      register(keys, handler, { ...options, scope });
+    // Register shortcuts using the stable definitions.
+    stableShortcuts.forEach(({ keys, options }) => {
+      const stableHandler: ShortcutHandler = (event, state) => {
+        const key = JSON.stringify(keys);
+        const currentHandler = handlersRef.current[key];
+        if (currentHandler) {
+          (currentHandler as any)(event, state);
+        }
+      };
+      register(keys, stableHandler, { ...options, scope });
     });
 
     if (disabled) {
@@ -141,17 +103,19 @@ export const Keybindy: React.FC<KeybindyProps> = ({
     }
 
     return () => {
-      shortcuts.forEach(({ keys }) => {
+      // Unregister using the same stable definitions.
+      stableShortcuts.forEach(({ keys }) => {
         if (Array.isArray(keys[0])) {
-          keys.forEach(key => unregister(key as Keys[], scope));
+          (keys as Keys[][]).forEach(key => unregister(key, scope));
         } else {
           unregister(keys as Keys[], scope);
         }
       });
-
       popScope();
     };
-  }, [scope, shortcuts, manager, disabled]);
+  }, [scope, manager, disabled, stableShortcuts]);
 
   return <>{children}</>;
 };
+
+export const Keybindy = React.memo(KeybindyComponent);

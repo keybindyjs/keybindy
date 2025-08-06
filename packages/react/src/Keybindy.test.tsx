@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, renderHook, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { Keybindy } from './Keybindy';

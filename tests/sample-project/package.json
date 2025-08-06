@@ -1,5 +1,5 @@
 {
-  "name": "sample-project",
+  "name": "@tests/sample-project",
   "version": "0.0.0",
   "devDependencies": {
     "vite": "^6.2.0"

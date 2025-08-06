@@ -1,4 +1,10 @@
 import { ShortcutManager } from './ShortcutManager';
-export * from './types';
+
+export type {
+  Keys,
+  ShortcutOptions,
+  Shortcut,
+  ShortcutHandler
+} from './types';
 
 export default ShortcutManager;
