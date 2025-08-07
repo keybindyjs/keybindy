@@ -5,6 +5,7 @@ const keyAliases: Record<string, string[]> = {
   shift: ['shift (left)', 'shift (right)'],
   alt: ['alt (left)', 'alt (right)'],
   meta: ['meta (left)', 'meta (right)', 'cmd'],
+  enter: ['enter', 'numpad enter'],
 };
 
 export function expandAliases(binding: Keys[]): Keys[][] {

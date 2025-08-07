@@ -1,5 +1,11 @@
 # @keybindy/core
 
+## [1.1.5] - 2025-08-07
+
+### Patch Changes
+
+- **Enter Alias**: `Enter` and `Numpad Enter` are now aliased. Defining a shortcut for `Enter` will trigger for both keys.
+
 ## [1.1.1 - 1.1.4] - 2025-08-06
 
 ### Patch Changes

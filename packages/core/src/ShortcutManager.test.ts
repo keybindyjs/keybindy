@@ -37,6 +37,17 @@ describe('ShortcutManager', () => {
     expect(onShortcutFired).toHaveBeenCalledOnce();
   });
 
+  it('should handle enter and numpad enter alias', () => {
+    const handler = vi.fn();
+    manager.register(['Enter'], handler);
+
+    dispatchKeyEvent('keydown', 'Enter');
+    expect(handler).toHaveBeenCalledTimes(1);
+
+    dispatchKeyEvent('keydown', 'NumpadEnter');
+    expect(handler).toHaveBeenCalledTimes(2);
+  });
+
   it('should register and trigger a simultaneous shortcut', () => {
     const handler = vi.fn();
     manager.register(['Ctrl', 'S'], handler);

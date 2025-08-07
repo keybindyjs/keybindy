@@ -79,7 +79,7 @@ bun add @keybindy/core
 Or use via CDN (URL coming soon):
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/@keybindy/core@latest/dist/keybindy.min.js"></script>
+<script src="https://unpkg.com/@keybindy/core@1.1.4/dist/keybindy.min.js"></script>
 ```
 
 ---
@@ -458,6 +458,7 @@ manager.register(
 - `alt (left)` / `alt (right)` → `alt`
 - `meta (left)` / `meta (right)` → `meta`
 - `cmd` → `meta`
+- `enter` / `numpad enter` → `enter`
 
 ---
 
