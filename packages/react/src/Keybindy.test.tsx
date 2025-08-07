@@ -36,10 +36,10 @@ describe('<Keybindy /> Component', () => {
       expect(mockManagerInstance.register).toHaveBeenCalledTimes(2);
       expect(mockManagerInstance.register).toHaveBeenCalledWith(
         ['Ctrl', 'S'],
-        shortcuts[0].handler,
+        expect.any(Function),
         { scope: 'editor' }
       );
-      expect(mockManagerInstance.register).toHaveBeenCalledWith(['A'], shortcuts[1].handler, {
+      expect(mockManagerInstance.register).toHaveBeenCalledWith(['A'], expect.any(Function), {
         scope: 'editor',
       });
     });

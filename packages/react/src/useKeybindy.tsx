@@ -25,9 +25,12 @@ type UseKeybindyReturn = {
   toggle: (keys: Keys[], scope?: string) => void;
   setScope: (scope: string) => void;
   getCheatSheet: (scope?: string) =>
-    | {
-        keys: string[];
-      }[]
+    | ({
+        keys: Keys[] | Keys[][];
+        hold: boolean;
+        sequential: boolean;
+        enabled: boolean;
+      } & Record<string, any>)[]
     | undefined;
   destroy: () => void;
   getScopeInfo: (scope?: string) => any;

@@ -6,7 +6,7 @@ import type {
   ShortcutBinding,
   HoldShortcutHandler,
 } from './types';
-import { expandAliases } from './utils/expandAliases';
+import { expandAliases, keyAliases } from './utils/expandAliases';
 import { normalizeKey } from './utils/normalizeKey';
 import { generateUID } from './utils/generateUID';
 import { ScopeManager } from './ScopeManager';
@@ -399,38 +399,68 @@ export class ShortcutManager extends ScopeManager {
    * @param scope - Optional scope filter (default is the currently active scope).
    * @returns An array of objects containing key combos and associated data.
    */
-  getCheatSheet(scope = this.getActiveScope()) {
-    const grouped = new Map<string, { keys: Set<string>; data: Record<string, string> }>();
+  getCheatSheet(scope = this.getActiveScope()): ({
+    keys: Keys[] | Keys[][];
+    hold: boolean;
+    sequential: boolean;
+    enabled: boolean;
+  } & Record<string, any>)[] {
+    const shortcutsInScope = this.shortcuts.filter(s => (s.options?.scope || 'global') === scope);
 
-    for (const s of this.shortcuts) {
-      if (s.options?.scope && s.options.scope !== scope) continue;
-
-      const id = s.id;
-      const keyCombo = s.keys
-        .map(k => {
-          if (k.startsWith('ctrl')) return 'ctrl';
-          if (k.startsWith('shift')) return 'shift';
-          if (k.startsWith('alt')) return 'alt';
-          if (k.startsWith('meta')) return 'meta';
-          return k;
-        })
-        .join(s.options?.sequential ? ' → ' : ' + ')
-        .toUpperCase();
-
-      if (!grouped.has(id)) {
-        grouped.set(id, {
-          keys: new Set([keyCombo]),
-          data: s.options?.data ?? {},
-        });
+    const grouped = new Map<string, Shortcut[]>();
+    for (const s of shortcutsInScope) {
+      const group = grouped.get(s.id);
+      if (group) {
+        group.push(s);
       } else {
-        grouped.get(id)!.keys.add(keyCombo);
+        grouped.set(s.id, [s]);
       }
     }
 
-    return Array.from(grouped.values()).map(g => ({
-      keys: Array.from(g.keys),
-      ...g.data,
-    }));
+    const result = [];
+    const reverseAliasMap = new Map<string, string>();
+    for (const alias in keyAliases) {
+      for (const variant of keyAliases[alias]) {
+        reverseAliasMap.set(variant, alias);
+      }
+    }
+
+    const compareBindings = (a: Keys[][], b: Keys[][]): boolean => {
+      if (a.length !== b.length) return false;
+      const aSorted = a.map(k => k.sort().join(',')).sort();
+      const bSorted = b.map(k => k.sort().join(',')).sort();
+      return JSON.stringify(aSorted) === JSON.stringify(bSorted);
+    };
+
+    for (const group of grouped.values()) {
+      const representative = group[0];
+      const actualBindings = group.map(s => s.keys);
+
+      const firstBinding = actualBindings[0];
+      const canonicalGuess = firstBinding.map(key => reverseAliasMap.get(key) || key) as Keys[];
+
+      const expandedGuess = expandAliases(canonicalGuess);
+
+      let finalBindings: Keys[][];
+      if (compareBindings(actualBindings, expandedGuess)) {
+        finalBindings = [canonicalGuess];
+      } else {
+        finalBindings = actualBindings;
+      }
+
+      result.push({
+        keys: finalBindings.length === 1 ? finalBindings[0] : finalBindings,
+        hold: representative.options?.hold || false,
+        sequential: representative.options?.sequential || false,
+        enabled: representative.enabled || true,
+        ...representative.options?.data,
+      });
+    }
+
+    return result.filter(
+      (item, index, self) =>
+        index === self.findIndex(t => JSON.stringify(t) === JSON.stringify(item))
+    );
   }
 
   /**

@@ -211,7 +211,7 @@ export interface ShortcutOptions {
   /**
    * Metadata for the shortcut.
    */
-  data?: Record<string, string>;
+  data?: Record<string, any>;
   /**
    * Whether the shortcut should be a "hold" action.
    */

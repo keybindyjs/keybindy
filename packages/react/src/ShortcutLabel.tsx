@@ -1,22 +1,24 @@
 import type { Keys } from '@keybindy/core';
 import React from 'react';
 
+type AllowedKeys = Omit<
+  Keys,
+  | 'Ctrl (Left)'
+  | 'Ctrl (Right)'
+  | 'Shift (Left)'
+  | 'Shift (Right)'
+  | 'Alt (Left)'
+  | 'Alt (Right)'
+  | 'Meta (Left)'
+  | 'Meta (Right)'
+>;
+
 interface ShortcutLabelProps
   extends React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> {
   /**
-   * Array of keys to display
+   * Array of keys to display. Can be a single binding `['Ctrl', 'S']` or multiple bindings `[['Ctrl', 'S'], ['Cmd', 'S']]`.
    */
-  keys: Omit<
-    Keys,
-    | 'Ctrl (Left)'
-    | 'Ctrl (Right)'
-    | 'Shift (Left)'
-    | 'Shift (Right)'
-    | 'Alt (Left)'
-    | 'Alt (Right)'
-    | 'Meta (Left)'
-    | 'Meta (Right)'
-  >[];
+  keys: AllowedKeys[] | AllowedKeys[][];
   /**
    * Custom render function for each key
    */
@@ -30,7 +32,7 @@ interface ShortcutLabelProps
      */
     index: number,
     /**
-     * All keys in the array
+     * All keys in the current binding
      */
     allKeys: string[]
   ) => React.ReactNode;
@@ -50,6 +52,10 @@ interface ShortcutLabelProps
  * <ShortcutLabel keys={['ctrl', 's']} />
  *
  * @example
+ * // With multiple bindings
+ * <ShortcutLabel keys={[['ctrl', 's'], ['meta', 's']]} />
+ *
+ * @example
  * // With custom renderKey
  * <ShortcutLabel
  *   keys={['ctrl', 'alt', 'delete']}
@@ -62,7 +68,7 @@ interface ShortcutLabelProps
  * />
  *
  * @param {ShortcutLabelProps} props - Props for the ShortcutLabel component
- * @param {string[]} props.keys - The list of keys to display.
+ * @param {string[] | string[][]} props.keys - The list of keys to display.
  * @param {Function} [props.renderKey] - Optional custom render function for full control over how each key appears.
  *
  * @returns {JSX.Element} Rendered shortcut label
@@ -87,13 +93,16 @@ export const ShortcutLabel = ({ keys, renderKey, style, ...props }: ShortcutLabe
     }
   };
 
-  const rendered = renderKey
-    ? keys.map((key, i) => (
-        <React.Fragment key={i}>{renderKey(key as string, i, keys as Keys[])}</React.Fragment>
-      ))
-    : defaultRenderKey
-      ? [keys.map(key => defaultRenderKey(key as string)).join(' + ')]
-      : [];
+  const renderSingleBinding = (binding: AllowedKeys[]) => {
+    if (renderKey) {
+      return binding.map((key, i) => (
+        <React.Fragment key={i}>{renderKey(key as string, i, binding as string[])}</React.Fragment>
+      ));
+    }
+    return binding.map(key => defaultRenderKey(key as string)).join(' + ');
+  };
+
+  const isNestedArray = Array.isArray(keys[0]);
 
   return (
     <kbd
@@ -108,7 +117,14 @@ export const ShortcutLabel = ({ keys, renderKey, style, ...props }: ShortcutLabe
       }}
       {...props}
     >
-      {rendered}
+      {isNestedArray
+        ? (keys as AllowedKeys[][]).map((binding, index) => (
+            <React.Fragment key={index}>
+              {renderSingleBinding(binding)}
+              {index < keys.length - 1 && ' / '}
+            </React.Fragment>
+          ))
+        : renderSingleBinding(keys as AllowedKeys[])}
     </kbd>
   );
 };

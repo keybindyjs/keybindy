@@ -1,6 +1,6 @@
 import type { Keys } from '../types';
 
-const keyAliases: Record<string, string[]> = {
+export const keyAliases: Record<string, string[]> = {
   ctrl: ['ctrl (left)', 'ctrl (right)'],
   shift: ['shift (left)', 'shift (right)'],
   alt: ['alt (left)', 'alt (right)'],

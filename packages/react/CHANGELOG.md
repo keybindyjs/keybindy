@@ -1,28 +1,32 @@
 # @keybindy/react
 
+### [1.1.8] - 2025-08-08
+
+### Changes
+
+- Updated `ShortcutLabel` to support nested arrays of keys.
+
+### [1.1.7] - 2025-08-08
+
+### Changes
+
+- Updated dependencies
+  - @keybindy/core@1.1.6
+
 ## [1.1.6] - 2025-08-07
 
-### Patch Changes
+### Changes
 
 - Updated dependencies
   - @keybindy/core@1.1.5
 
 ## [1.1.1 - 1.1.5] - 2025-08-06
 
-### Patch Changes
+### Changes
 
-- **Bug Fix**: Fixed a critical bug where `hold`
-  shortcuts would fail to trigger their `keyup` event if the
-  handler updated component state, causing a re-render. The
-  `<Keybindy>` component is now internally resilient, making
-  stateful `hold` actions stable and reliable.
-- **DX**: Improved the developer experience by refining
-  and centralizing TypeScript types. The ambiguous
-  `ShortcutDefinition` type has been renamed to the more
-  intuitive `KeybindyShortcut`.
-- **Performance**: Wrapped the `<Keybindy>` component in
-  `React.memo` to prevent unnecessary re-renders and improve
-  performance.
+- **Bug Fix**: Fixed a critical bug where `hold` shortcuts would fail to trigger their `keyup` event if the handler updated component state, causing a re-render. The `<Keybindy>` component is now internally resilient, making stateful `hold` actions stable and reliable.
+- **DX**: Improved the developer experience by refining and centralizing TypeScript types. The ambiguous `ShortcutDefinition` type has been renamed to the more intuitive `KeybindyShortcut`.
+- **Performance**: Wrapped the `<Keybindy>` component in `React.memo` to prevent unnecessary re-renders and improve performance.
 - fixed package.json
 - Updated dependencies
   - @keybindy/core@1.1.4

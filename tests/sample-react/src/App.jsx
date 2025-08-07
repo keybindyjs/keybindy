@@ -9,14 +9,16 @@ function App() {
     s.register(['Enter'], () => {
       console.log('Enter key pressed!');
     });
+    console.log(s.getCheatSheet())
   }, [s]);
+
 
   return (
     <Keybindy
       scope="global"
       shortcuts={[
         {
-          keys: ['Ctrl'],
+          keys: [['Ctrl (Left)'], ['Alt']],
           handler: (e, state) => {
             console.log(e)
             if (state === 'down') {
@@ -51,15 +53,17 @@ function App() {
       ]}
     >
       <div>
-        <ShortcutLabel
-          keys={['ctrl', 'alt', 'delete']}
-          renderKey={(key, i, all) => (
-            <>
-              <span style={{ color: '#00eaff' }}>{key.toUpperCase()}</span>
-              {i < all.length - 1 && <span style={{ opacity: 0.5 }}> + </span>}
-            </>
-          )}
-        />
+        {s?.getCheatSheet() && s.getCheatSheet().map((shortcut) => (
+          <ShortcutLabel
+            keys={shortcut.keys}
+            // renderKey={(key, i, all) => (
+            //   <>
+            //     <span style={{ color: '#00eaff' }}>{key.toUpperCase()}</span>
+            //     {i < all.length - 1 && <span style={{ opacity: 0.5 }}> + </span>}
+            //   </>
+            // )}
+          />
+        ))}
       </div>
       <h1>Vite + React</h1>
       <button onClick={() => setIsOpen(!isOpen)}>Toggle</button>
