@@ -1,5 +1,12 @@
 # @keybindy/react
 
+## [1.1.6] - 2025-08-07
+
+### Patch Changes
+
+- Updated dependencies
+  - @keybindy/core@1.1.5
+
 ## [1.1.1 - 1.1.5] - 2025-08-06
 
 ### Patch Changes
