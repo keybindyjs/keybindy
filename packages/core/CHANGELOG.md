@@ -1,5 +1,11 @@
 # @keybindy/core
 
+### [1.1.7] - 2025-08-08
+
+### Changes
+
+- maintain user defined key order in `getCheatSheet` method.
+
 ### [1.1.6] - 2025-08-08
 
 ### Changes
