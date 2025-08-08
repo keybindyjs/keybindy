@@ -54,7 +54,7 @@ function App() {
     >
       <div>
         <ShortcutLabel
-          keys={[["ctrl", "shift"]]}
+          keys={[["ctrl","a","shift"]]}
           // render={(keys) => {
           //   console.log(keys)
           //   return keys.map((key) => (

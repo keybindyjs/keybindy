@@ -427,8 +427,13 @@ export class ShortcutManager extends ScopeManager {
 
     const compareBindings = (a: Keys[][], b: Keys[][]): boolean => {
       if (a.length !== b.length) return false;
-      const aSorted = a.map(k => k.sort().join(',')).sort();
-      const bSorted = b.map(k => k.sort().join(',')).sort();
+      // Convert each inner array to a string to preserve its internal order
+      const aStrings = a.map(k => k.join(','));
+      const bStrings = b.map(k => k.join(','));
+
+      // Sort the array of strings to compare the sets of combinations, ignoring their order
+      const aSorted = aStrings.sort();
+      const bSorted = bStrings.sort();
       return JSON.stringify(aSorted) === JSON.stringify(bSorted);
     };
 
