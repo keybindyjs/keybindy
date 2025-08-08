@@ -1,5 +1,12 @@
 # @keybindy/react
 
+### [1.1.9] - 2025-08-08
+
+### Changes
+
+- Fixed a bug where `render(previously renderKey)` prop in `ShortcutLabel` could show duplicates.
+- renamed `renderKeys` to `render`.
+
 ### [1.1.8] - 2025-08-08
 
 ### Changes

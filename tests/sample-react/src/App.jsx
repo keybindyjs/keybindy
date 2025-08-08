@@ -53,17 +53,20 @@ function App() {
       ]}
     >
       <div>
-        {s?.getCheatSheet() && s.getCheatSheet().map((shortcut) => (
-          <ShortcutLabel
-            keys={shortcut.keys}
-            // renderKey={(key, i, all) => (
-            //   <>
-            //     <span style={{ color: '#00eaff' }}>{key.toUpperCase()}</span>
-            //     {i < all.length - 1 && <span style={{ opacity: 0.5 }}> + </span>}
-            //   </>
-            // )}
-          />
-        ))}
+        <ShortcutLabel
+          keys={[["ctrl", "shift"]]}
+          // render={(keys) => {
+          //   console.log(keys)
+          //   return keys.map((key) => (
+          //     <span
+          //       key={key}
+          //       className="text-xs font-medium text-foreground rounded px-2 py-1 bg-muted border-muted select-auto"
+          //     >
+          //       {key}
+          //     </span>
+          //   ));
+          // }}
+        />
       </div>
       <h1>Vite + React</h1>
       <button onClick={() => setIsOpen(!isOpen)}>Toggle</button>
