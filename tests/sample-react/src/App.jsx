@@ -52,9 +52,31 @@ function App() {
         },
       ]}
     >
-      <div>
-        <ShortcutLabel
-          keys={[["ctrl","a","shift"]]}
+      <Keybindy
+        scope="global"
+        shortcuts={() => {
+          let variable = 1;
+          return [
+            {
+              keys: ['Z'],
+              handler: () => {
+                variable++;
+                console.log('Z pressed:', variable);
+              },
+            },
+            {
+              keys: ['X'],
+              handler: () => {
+                variable++;
+                console.log('X pressed:', variable);
+              },
+            },
+          ];
+        }}>
+
+        <div>
+          <ShortcutLabel
+            keys={[["ctrl", "a", "shift"]]}
           // render={(keys) => {
           //   console.log(keys)
           //   return keys.map((key) => (
@@ -66,46 +88,47 @@ function App() {
           //     </span>
           //   ));
           // }}
-        />
-      </div>
-      <h1>Vite + React</h1>
-      <button onClick={() => setIsOpen(!isOpen)}>Toggle</button>
-      {isOpen && (
-        <Keybindy
-          scope="dialog"
-          shortcuts={[
-            {
-              keys: ['Esc'],
-              handler: () => setIsOpen(false),
-              options: {
-                preventDefault: true,
+          />
+        </div>
+        <h1>Vite + React</h1>
+        <button onClick={() => setIsOpen(!isOpen)}>Toggle</button>
+        {isOpen && (
+          <Keybindy
+            scope="dialog"
+            shortcuts={[
+              {
+                keys: ['Esc'],
+                handler: () => setIsOpen(false),
+                options: {
+                  preventDefault: true,
+                },
               },
-            },
-          ]}
-        >
-          <div
-            style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: '90vw',
-              height: '200px',
-              backgroundColor: '#2e2e2e',
-              color: '#fff',
-              padding: '20px',
-              borderRadius: '5px',
-            }}
+            ]}
           >
-            <h2>Alert</h2>
-            <button onClick={() => setIsOpen(false)}>Close</button>
-          </div>
-        </Keybindy>
-      )}
-      <p>
-        Edit <code>src/App.jsx</code> and save to test HMR
-      </p>
-      <p className="read-the-docs">Click on the Vite and React logos to learn more</p>
+            <div
+              style={{
+                position: 'fixed',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: '90vw',
+                height: '200px',
+                backgroundColor: '#2e2e2e',
+                color: '#fff',
+                padding: '20px',
+                borderRadius: '5px',
+              }}
+            >
+              <h2>Alert</h2>
+              <button onClick={() => setIsOpen(false)}>Close</button>
+            </div>
+          </Keybindy>
+        )}
+        <p>
+          Edit <code>src/App.jsx</code> and save to test HMR
+        </p>
+        <p className="read-the-docs">Click on the Vite and React logos to learn more</p>
+      </Keybindy>
     </Keybindy>
   );
 }

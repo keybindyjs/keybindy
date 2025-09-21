@@ -7,10 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      rollup:
-        specifier: ^4.46.2
-        version: 4.46.2
     devDependencies:
       '@changesets/cli':
         specifier: ^2.29.5
@@ -63,6 +59,9 @@ importers:
       prettier:
         specifier: ^3.6.2
         version: 3.6.2
+      rollup:
+        specifier: ^4.46.2
+        version: 4.46.2
       rollup-plugin-dts:
         specifier: ^6.2.1
         version: 6.2.1(rollup@4.46.2)(typescript@5.9.2)
@@ -105,8 +104,8 @@ importers:
   tests/sample-project:
     dependencies:
       '@keybindy/core':
-        specifier: ^1.0.2
-        version: 1.1.3(typescript@5.9.2)
+        specifier: ^1.1.6
+        version: 1.1.7(typescript@5.9.2)
     devDependencies:
       vite:
         specifier: ^6.2.0
@@ -675,8 +674,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.29':
     resolution: {integrity: sha512-uw6guiW/gcAGPDhLmd77/6lW8QLeiV5RUTsAX46Db6oLhGaVj4lhnPwb184s1bkc8kdVg/+h988dro8GRDpmYQ==}
 
-  '@keybindy/core@1.1.3':
-    resolution: {integrity: sha512-zP+SBvDqrXA3vvtQ2NfiujnCN10dVx37GuL7mwcVOmrZ0uRJrAC0MPiCBew/vjvYROPYPs+eQ+4x9iw/8egBvg==}
+  '@keybindy/core@1.1.7':
+    resolution: {integrity: sha512-IXcPAb5CIlPVVDQcsoir1m7OaJvfboWwYftQukYT87EZkKV2VNZVjPLCsUp5/eJBzq7FuMNMj22vM9UPOFTO7w==}
     peerDependencies:
       typescript: ^5.0.0
 
@@ -2654,7 +2653,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.4
 
-  '@keybindy/core@1.1.3(typescript@5.9.2)':
+  '@keybindy/core@1.1.7(typescript@5.9.2)':
     dependencies:
       typescript: 5.9.2
 

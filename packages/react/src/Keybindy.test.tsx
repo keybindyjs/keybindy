@@ -26,11 +26,15 @@ describe('<Keybindy /> Component', () => {
   });
 
   it('should register shortcuts on mount', async () => {
-    const shortcuts = [
-      { keys: ['Ctrl', 'S'], handler: vi.fn() },
-      { keys: ['A'], handler: vi.fn() },
-    ];
-    render(<Keybindy shortcuts={shortcuts} scope="editor" />);
+    render(
+      <Keybindy
+        shortcuts={[
+          { keys: ['Ctrl', 'S'], handler: () => {} },
+          { keys: ['A'], handler: () => {} },
+        ]}
+        scope="editor"
+      />
+    );
 
     await waitFor(() => {
       expect(mockManagerInstance.register).toHaveBeenCalledTimes(2);
@@ -46,8 +50,9 @@ describe('<Keybindy /> Component', () => {
   });
 
   it('should unregister shortcuts on unmount', async () => {
-    const shortcuts = [{ keys: ['Ctrl', 'S'], handler: vi.fn() }];
-    const { unmount } = render(<Keybindy shortcuts={shortcuts} scope="editor" />);
+    const { unmount } = render(
+      <Keybindy shortcuts={[{ keys: ['Ctrl', 'S'], handler: () => {} }]} scope="editor" />
+    );
 
     await waitFor(() => {
       expect(mockManagerInstance.register).toHaveBeenCalled();
@@ -77,6 +82,21 @@ describe('<Keybindy /> Component', () => {
     render(<Keybindy scope="test" disabled />);
     await waitFor(() => {
       expect(mockManagerInstance.disableAll).toHaveBeenCalledWith('test');
+    });
+  });
+
+  it('should handle shortcuts as a function', async () => {
+    render(
+      <Keybindy shortcuts={() => [{ keys: ['Ctrl', 'K'], handler: () => {} }]} scope="editor" />
+    );
+
+    await waitFor(() => {
+      expect(mockManagerInstance.register).toHaveBeenCalledTimes(1);
+      expect(mockManagerInstance.register).toHaveBeenCalledWith(
+        ['Ctrl', 'K'],
+        expect.any(Function),
+        { scope: 'editor' }
+      );
     });
   });
 });

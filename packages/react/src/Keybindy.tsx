@@ -14,9 +14,10 @@ type KeybindyProps = {
   scope?: 'global' | string;
 
   /**
-   * Array of shortcut definitions to register for this scope.
+   * An array of shortcut definitions or a function that returns an array of shortcuts.
+   * Using a function can be useful for memoizing shortcuts or defining them conditionally.
    */
-  shortcuts?: KeybindyShortcut[];
+  shortcuts?: KeybindyShortcut[] | (() => KeybindyShortcut[]);
 
   /**
    * Whether the shortcuts should be disabled for this scope.
@@ -43,7 +44,7 @@ type KeybindyProps = {
 
 const KeybindyComponent: React.FC<KeybindyProps> = ({
   scope = 'global',
-  shortcuts = [],
+  shortcuts: shortcutsProp = [],
   children,
   disabled,
   onShortcutFired,
@@ -53,6 +54,11 @@ const KeybindyComponent: React.FC<KeybindyProps> = ({
     onShortcutFired,
     logs,
   });
+
+  const shortcuts = React.useMemo(
+    () => (typeof shortcutsProp === 'function' ? shortcutsProp() : shortcutsProp) || [],
+    [shortcutsProp]
+  );
 
   // Memoize a stable representation of shortcuts, excluding the handler.
   // This prevents the effect from re-running unnecessarily.

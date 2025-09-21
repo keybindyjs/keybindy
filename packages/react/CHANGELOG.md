@@ -1,5 +1,11 @@
 # @keybindy/react
 
+### [1.1.12] - 2025-09-21
+
+### Changes
+
+- Introduces a new feature to the `<Keybindy />` component, allowing the `shortcuts` prop to accept a function that returns an array of shortcuts. This provides greater flexibility for defining keybindings, especially in dynamic or complex scenarios.
+
 ### [1.1.11] - 2025-08-08
 
 ### Changes
