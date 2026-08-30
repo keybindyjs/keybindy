@@ -196,16 +196,20 @@ export const useShortcuts = (
     let unregisterBefore: (() => void) | undefined;
     let unregisterAfter: (() => void) | undefined;
 
+    const hookKeys = stableShortcuts.flatMap(s =>
+      Array.isArray(s.keys[0]) ? (s.keys as any) : [s.keys]
+    );
+
     if (beforeEach) {
       unregisterBefore = manager.beforeEach((shortcut, event) => {
         return beforeEachRef.current ? beforeEachRef.current(shortcut, event) : undefined;
-      }, { scope });
+      }, { scope, keys: hookKeys.length > 0 ? hookKeys : undefined });
     }
 
     if (afterEach) {
       unregisterAfter = manager.afterEach((shortcut, event) => {
         if (afterEachRef.current) afterEachRef.current(shortcut, event);
-      }, { scope });
+      }, { scope, keys: hookKeys.length > 0 ? hookKeys : undefined });
     }
 
     // Register shortcuts using the stable definitions.

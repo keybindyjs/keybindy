@@ -1,5 +1,16 @@
 # @keybindy/react
 
+## [2.0.1] - 2026-08-30
+
+### Improvements & Fixes
+
+- **Isolated Hook Guard & Interceptor Scoping**:
+  - `useShortcuts` now automatically scopes its `beforeEach` and `afterEach` options specifically to the key combinations defined in that hook call, allowing multiple `useShortcuts` hooks under the same scope to use different guards without cross-interference.
+- **Enhanced Contextual Typing**:
+  - Handlers passed to `useShortcut` and `useShortcuts` strictly infer `(event: KeyboardEvent)` rather than `any`.
+- **Synchronized with `@keybindy/core@2.0.1`**:
+  - Inherits per-shortcut `beforeEach` and `afterEach` options and sequential key order improvements.
+
 ## [2.0.0] - 2026-08-30
 
 ### Major Features & Improvements

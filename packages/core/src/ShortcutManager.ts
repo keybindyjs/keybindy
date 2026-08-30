@@ -4,7 +4,6 @@ import type {
   ShortcutOptions,
   Shortcut,
   ShortcutBinding,
-  HoldShortcutHandler,
   ShortcutManagerOptions,
   BeforeEachHook,
   AfterEachHook,
@@ -50,7 +49,12 @@ export class ShortcutManager extends ScopeManager {
     options?: HookOptions;
   }[] = [];
 
-  constructor({ onShortcutFired, silent = false, ignoreInputs = false, scopeMode }: ShortcutManagerOptions = {}) {
+  constructor({
+    onShortcutFired,
+    silent = false,
+    ignoreInputs = false,
+    scopeMode,
+  }: ShortcutManagerOptions = {}) {
     super();
     this.onShortcutFired = onShortcutFired || (() => {});
     this.logger = new Logger({ silent });
@@ -110,9 +114,9 @@ export class ShortcutManager extends ScopeManager {
 
     // Keys check
     if (options.keys && options.keys.length > 0) {
-      const targetBindings = (
-        Array.isArray(options.keys[0]) ? options.keys : [options.keys]
-      ) as unknown as Keys[][];
+      const targetBindings = (Array.isArray(options.keys[0])
+        ? options.keys
+        : [options.keys]) as unknown as Keys[][];
 
       const isSequential = Boolean(shortcut.options?.sequential);
       const normalizeCombo = (combo: Keys[]): string => {
@@ -151,6 +155,12 @@ export class ShortcutManager extends ScopeManager {
         }
       }
     }
+    if (shortcut.options?.beforeEach) {
+      const result = shortcut.options.beforeEach(shortcut, event);
+      if (result === false) {
+        return false;
+      }
+    }
     return true;
   }
 
@@ -166,6 +176,13 @@ export class ShortcutManager extends ScopeManager {
         } catch (err) {
           this.logger.error(err);
         }
+      }
+    }
+    if (shortcut.options?.afterEach) {
+      try {
+        shortcut.options.afterEach(shortcut, event);
+      } catch (err) {
+        this.logger.error(err);
       }
     }
   }
@@ -330,7 +347,7 @@ export class ShortcutManager extends ScopeManager {
       if (!this.activeHoldShortcuts.has(bestHold.id)) {
         if (this.runBeforeHooks(bestHold, e)) {
           if (bestHold.options?.preventDefault) e.preventDefault();
-          (bestHold.handler as HoldShortcutHandler)(e, 'down');
+          bestHold.handler(e, 'down');
           this.activeHoldShortcuts.add(bestHold.id);
           this.onShortcutFired(bestHold);
           this.runAfterHooks(bestHold, e);
@@ -426,10 +443,14 @@ export class ShortcutManager extends ScopeManager {
     // Handle hold shortcuts
     for (const shortcutId of this.activeHoldShortcuts) {
       const shortcut = this.shortcuts.find(s => s.id === shortcutId);
-      if (shortcut && !this.shouldIgnoreForInput(shortcut, e.target) && shortcut.keys.map(k => k.toLowerCase()).includes(key)) {
+      if (
+        shortcut &&
+        !this.shouldIgnoreForInput(shortcut, e.target) &&
+        shortcut.keys.map(k => k.toLowerCase()).includes(key)
+      ) {
         if (this.runBeforeHooks(shortcut, e)) {
           if (shortcut.options?.preventDefault) e.preventDefault();
-          (shortcut.handler as HoldShortcutHandler)(e, 'up');
+          shortcut.handler(e, 'up');
           this.activeHoldShortcuts.delete(shortcutId);
           this.runAfterHooks(shortcut, e);
         }
@@ -481,9 +502,7 @@ export class ShortcutManager extends ScopeManager {
    * @param options - Optional configuration including scope, ID, and metadata.
    */
   register(binding: ShortcutBinding, handler: ShortcutHandler, options?: ShortcutOptions) {
-    const bindings = (
-      Array.isArray(binding[0]) ? binding : [binding]
-    ) as unknown as Keys[][];
+    const bindings = (Array.isArray(binding[0]) ? binding : [binding]) as unknown as Keys[][];
 
     const id = options?.data?.id || generateUID();
     const targetScope = options?.scope || 'global';
@@ -528,9 +547,7 @@ export class ShortcutManager extends ScopeManager {
    * @param scope - The scope in which the shortcut was registered (default: "global").
    */
   unregister(keys: ShortcutBinding, scope: string = 'global') {
-    const bindings = (
-      Array.isArray(keys[0]) ? keys : [keys]
-    ) as unknown as Keys[][];
+    const bindings = (Array.isArray(keys[0]) ? keys : [keys]) as unknown as Keys[][];
 
     for (const binding of bindings) {
       const expandedCombos = expandAliases(binding as any);
