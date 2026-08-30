@@ -7,7 +7,7 @@
     "test": "pnpm --filter \"./packages/**\" test",
     "changeset": "changeset",
     "version": "changeset version",
-    "release": "changeset publish",
+    "release": "pnpm --filter \"./packages/**\" publish --access public --no-git-checks",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
