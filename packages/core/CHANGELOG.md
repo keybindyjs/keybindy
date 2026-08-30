@@ -1,5 +1,16 @@
 # @keybindy/core
 
+## [2.0.1] - 2026-08-30
+
+### Improvements & Fixes
+
+- **Contextual Typing for Handler Event**:
+  - Unified `ShortcutHandler` to `(event: KeyboardEvent, state?: HoldState) => void`, ensuring 1-parameter handler callbacks `(event) => ...` infer `KeyboardEvent` with full autocomplete rather than `any`.
+- **Per-Shortcut Hooks**:
+  - Added `beforeEach` and `afterEach` options directly inside `ShortcutOptions`.
+- **Sequential Hook Order Preservation**:
+  - Fixed hook filter matching to preserve exact key order for sequential shortcuts (`['G', 'D']` vs `['D', 'G']`).
+
 ## [2.0.0] - 2026-08-30
 
 ### Major Features & Improvements

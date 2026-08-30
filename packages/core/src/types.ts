@@ -181,12 +181,11 @@ export type Keys =
   | 'Brightness Down';
 
 export type HoldState = 'down' | 'up';
-export type HoldShortcutHandler = (event: KeyboardEvent, state: HoldState) => void;
 
 /**
  * Function to handle a keyboard event triggered by a shortcut.
  */
-export type ShortcutHandler = ((event: KeyboardEvent) => void) | HoldShortcutHandler;
+export type ShortcutHandler = (event: KeyboardEvent, state?: HoldState) => void;
 
 /**
  * Configuration options for a shortcut.
@@ -240,6 +239,14 @@ export interface ShortcutOptions {
    * Takes precedence over manager-level `ignoreInputs: true`.
    */
   enableInInput?: boolean;
+  /**
+   * Guard hook executed before this specific shortcut runs. Returning `false` aborts execution.
+   */
+  beforeEach?: BeforeEachHook;
+  /**
+   * Interceptor hook executed after this specific shortcut runs.
+   */
+  afterEach?: AfterEachHook;
 }
 
 /**

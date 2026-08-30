@@ -1,6 +1,6 @@
 {
   "name": "@keybindy/react",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Keybindy for React: Simple, scoped keyboard shortcuts that require little setup. designed to smoothly blend in with your React applications, allowing for robust keybinding functionality without the overhead.",
   "author": {
     "name": "PRASSamin",

@@ -14,6 +14,7 @@ function App() {
   return (
     <Keybindy
       scope="global"
+      beforeEach={()=> {console.log("before 1")}}
       shortcuts={[
         {
           keys: [['Ctrl (Left)'], ['Alt']],
@@ -52,6 +53,7 @@ function App() {
     >
       <Keybindy
         scope="global"
+        beforeEach={()=> {console.log("before 2")}}
         shortcuts={() => {
           let variable = 1;
           return [

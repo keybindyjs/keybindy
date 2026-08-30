@@ -1,6 +1,6 @@
 {
   "name": "@keybindy/core",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "A lightweight and framework-agnostic keyboard shortcut manager for web apps. Define, register, and handle keybindings with ease.",
   "author": {
     "name": "PRASSamin",
