@@ -1,5 +1,23 @@
 # @keybindy/core
 
+## [2.0.0] - 2026-08-30
+
+### Major Features & Improvements
+
+- **Cascading Scope Mode & Priority Weights**:
+  - Added `scopeMode: 'default' | 'cascade'`. In `'default'` mode, only the topmost active scope is enabled (ideal for strict modal isolation). In `'cascade'` mode, all active scopes work together.
+  - Added dynamic numeric priority weighting (`setScopePriority(scope, priority)`, `removeScopePriority(scope)`). Common key collisions are resolved by priority weight (e.g. `100 > 10 > 0`) or stack order, while non-colliding parent shortcuts continue executing.
+- **Guard & Interceptor Middlewares**:
+  - Added `beforeEach((shortcut, event) => boolean | void, options?)` guard hook. Returning `false` safely cancels shortcut execution.
+  - Added `afterEach((shortcut, event) => void, options?)` interceptor hook for analytics, telemetry, and side-effects.
+- **Smart Input Target Handling**:
+  - Added automatic ignoring of keystrokes when typing inside `<input>`, `<textarea>`, `<select>`, and `[contenteditable="true"]` via global `ignoreInputs: true` and per-shortcut `ignoreInputs: true`.
+  - Added `enableInInput: true` option to allow specific shortcuts (like `Esc`) to trigger even while focused on an input.
+- **Forgiving Cross-Platform Aliases**:
+  - Expanded key alias normalization to seamlessly recognize `Cmd`, `Command`, `Meta`, `Option`, `Alt`, `Return`, `Enter`, `Esc`, and `Escape`.
+- **Enhanced Types & TypeScript DX**:
+  - Introduced `Key` and `ShortcutBinding = (Key | Key[])[]` types, completely eliminating TypeScript union array inference bugs (`never[]`).
+
 ### [1.1.7] - 2025-08-08
 
 ### Changes

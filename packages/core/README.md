@@ -1,485 +1,261 @@
-# Keybindy
+# @keybindy/core
 
-**Keybindy** is a lightweight, fast, and framework-agnostic TypeScript library for managing keyboard shortcuts in JavaScript applications. With a small footprint and zero dependencies, Keybindy makes it easy to register, manage, and scope keyboard shortcuts in any environment — whether you're building with vanilla JavaScript, Vue, Svelte, or another framework.
+<p align="center">
+  <strong>The lightweight, framework-agnostic keyboard shortcut engine for modern web apps.</strong>
+</p>
 
-The `@keybindy/core` package is the foundation of the Keybindy ecosystem, providing all the logic for keyboard shortcut management. For React developers, the optional `@keybindy/react` package offers seamless integration.
-
-[![npm version](https://badge.fury.io/js/@keybindy%2Fcore.svg)](https://www.npmjs.com/package/@keybindy/core)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-
----
-
-## 🚀 Why **Keybindy**?
-
-Keyboard shortcuts are essential for productivity and a smooth user experience — but managing them across components, contexts, and frameworks can quickly become a nightmare.  
-That’s where **Keybindy** comes in.
-
-#### Why not other libraries?
-
-Other shortcut libraries often come with:
-
-- Framework lock-ins (React-only, etc.)
-- Extra dependencies that bloat your bundle
-- Complex APIs and awkward scope handling
-- Larger file sizes that slow down performance
-
-#### What makes Keybindy different?
-
-**Keybindy** is a blazing-fast, ultra-lightweight **TypeScript-first** solution for handling keyboard shortcuts.  
-It’s designed to be:
-
-- **Tiny & dependency-free** — approximately **2KB** gzipped
-- **Framework-agnostic** — works with **Vanilla JS, React, Vue, Svelte**, and beyond
-- **Simple yet powerful** — clean APIs to register, scope, and manage shortcuts effortlessly
-- **Tree-shakeable** — only includes what you actually use
-- **Side-effect free** — making it ideal for modern builds
-
-Whether you're building a single-page app, a design tool, or a productivity suite — **Keybindy** gives you total control over keyboard interactions without the baggage.
+<p align="center">
+  <a href="https://www.npmjs.com/package/@keybindy/core"><img src="https://img.shields.io/npm/v/@keybindy/core.svg?style=flat&colorA=18181B&colorB=3B82F6" alt="npm version" /></a>
+  <a href="https://bundlephobia.com/package/@keybindy/core"><img src="https://img.shields.io/bundlephobia/minzip/@keybindy/core?style=flat&colorA=18181B&colorB=10B981" alt="minzipped size" /></a>
+  <a href="https://github.com/keybindyjs/keybindy/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat&colorA=18181B&colorB=6366F1" alt="MIT License" /></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-Ready-blue?style=flat&colorA=18181B&colorB=3178C6" alt="TypeScript" /></a>
+</p>
 
 ---
 
-### Use Cases
+Handling keyboard shortcuts in complex web applications starts simple, but quickly turns chaotic:
+- You open a modal and global shortcuts trigger in the background.
+- You type in a search input and hotkeys fire unintentionally.
+- Conflicting tools (like Canvas vs. Layer panel) fight over the same keys.
+- Modifier keys on Mac vs. Windows require messy conditional code.
 
-- Registering global shortcuts (e.g., `Ctrl+S` for saving)
-- Managing scoped shortcuts for modals, editors, or UI sections
-- Creating keyboard-driven UIs for accessibility and power users
-- Enhancing web games and interactive tools with custom bindings
-
----
-
-## Features
-
-- **✅ Global and Scoped Shortcuts** – Define app-wide or context-specific keys
-- **🎺 Multi-Key Combos** – Full support for combinations like Ctrl+Shift+K
-- **♻️ Key Alias Normalization** – Smart matching of `cmd → meta`, `ctrl (left) | ctrl (right) → ctrl`, etc.
-- **🧼 Prevent Default Behavior** – Easily block native browser actions
-- **⚡ Zero Dependencies** – Lightweight and fast
-- **🔧 Framework Agnostic** – Works with any frontend stack
-- **🔒 Type-Safe** – Written in TypeScript with full .d.ts support
-- **🌐 CDN Friendly** – Use in plain HTML projects with a simple script tag
-- **🔌 Custom Event Hooks** – Emit key events for custom behavior and extensions
+**Keybindy** is built from the ground up to solve this with a clean, centralized, and delightful API. It weighs **~2KB**, has **zero dependencies**, and works anywhere JavaScript runs — Vanilla JS, React, Vue, Svelte, or Solid.
 
 ---
 
-## Installation
+## ✨ Features
 
-Install the core package using your preferred package manager:
+- **⚡️ Zero Dependencies & Ultra-Lightweight** — Tiny footprint (~2KB gzipped).
+- **🎹 3 Shortcut Models** — Simultaneous chords (`Ctrl+S`), Vim-style sequences (`G` then `D`), and Hold actions (push-to-talk).
+- **🎯 Smart Scoping & Layering** — Seamlessly isolate modals or cascade shortcuts across complex layered tools.
+- **⚖️ Priority Resolution** — Layer child tools over parent canvases with numeric priority weights.
+- **🛡 Guard & Interceptor Hooks** — Run global or scoped `beforeEach` and `afterEach` middlewares.
+- **📝 Smart Input Detection** — Automatically ignores typing inside inputs, textareas, and contenteditable elements (with easy per-shortcut overrides).
+- **🍎 Forgiving Cross-Platform Aliases** — Write `Cmd`, `Command`, `Option`, `Alt`, `Esc`, or `Escape` — Keybindy normalizes them automatically.
+- **🔒 100% TypeScript** — Strict type safety and rich IDE autocomplete.
+
+---
+
+## 📦 Installation
 
 ```bash
 # npm
 npm install @keybindy/core
 
-# yarn
-yarn add @keybindy/core
+# pnpm
+pnpm add @keybindy/core
 
 # bun
 bun add @keybindy/core
 ```
 
-Or use via CDN (URL coming soon):
-
-```html
-<script src="https://unpkg.com/@keybindy/core@1.1.4/dist/keybindy.min.js"></script>
-```
-
 ---
 
-## Getting Started
-
-### Initialization
+## 🚀 Quick Start
 
 ```ts
-// With import
 import ShortcutManager from '@keybindy/core';
-const manager = new ShortcutManager();
 
-// With CDN
-const manager = new Keybindy();
+// 1. Initialize
+const shortcuts = new ShortcutManager({
+  ignoreInputs: true, // Automatically ignore hotkeys when typing in inputs/textareas
+});
+
+// 2. Register standard shortcuts
+shortcuts.register(['Ctrl', 'S'], (event) => {
+  console.log('Saved document!');
+}, { preventDefault: true });
+
+// 3. Multi-platform bindings (Cmd on Mac, Ctrl on Windows)
+shortcuts.register([['Meta', 'K'], ['Ctrl', 'K']], () => {
+  console.log('Search palette opened!');
+}, { preventDefault: true });
 ```
 
 ---
 
-### Register shortcuts
+## 💡 Shortcut Types
+
+### 1. Simultaneous Chords
+Fires when all specified keys are pressed down together:
 
 ```ts
-// Register "Enter" to submit a form in the "modal" scope
-manager.register(
-  ['Enter'],
-  () => {
-    console.log('Submitting modal form...');
-  },
-  { scope: 'modal', preventDefault: true }
-);
-
-// Activate the modal scope (e.g., when modal opens)
-manager.setActiveScope('modal');
+shortcuts.register(['Ctrl', 'Shift', 'P'], () => {
+  openCommandPalette();
+}, { preventDefault: true });
 ```
 
----
-
-### Supported methods
-
-#### **`start`**
-
-Starts the manager manually. This is usually not required, as the manager starts automatically on instantiation.
-
-##### Example
+### 2. Sequential Chains (Vim / GitHub style)
+Fires when keys are pressed in sequence within a configurable timeout window:
 
 ```ts
-manager.start();
+// Press 'G' then 'D' to Go to Dashboard
+shortcuts.register(['G', 'D'], () => {
+  navigateTo('/dashboard');
+}, {
+  sequential: true,
+  sequenceDelay: 800, // max ms between keystrokes (default: 1000)
+});
 ```
 
----
-
-#### **`register`**
-
-Registers a new shortcut.
-
-| Parameter | Type              | Required | Description                                             |
-| --------- | ----------------- | -------- | ------------------------------------------------------- |
-| `keys`    | `Keys[]`          | ✅       | Keys to bind (e.g., ["ctrl", "shift", "k"])             |
-| `handler` | `ShortcutHandler` | ✅       | Callback to execute when the shortcut is triggered.     |
-| `options` | `ShortcutOptions` | ❌       | Optional config (scope, preventDefault, metadata, etc.) |
-
-##### Example
+### 3. Holdable Actions (Push-to-Talk / Pan Tool)
+Fires both on `down` and `up`, allowing continuous actions while held:
 
 ```ts
-manager.register(
-  ['ctrl', 'shift', 'k'],
-  () => {
-    console.log('Triggered Ctrl+Shift+K');
-  },
-  {
-    preventDefault: true,
-    scope: 'modal',
-    sequential: true,
-    sequenceDelay: 1000,
-    data: {
-      // metadata
-      label: 'Ctrl+Shift+K',
-      description: 'Submit form',
-    },
+shortcuts.register(['Space'], (event, state) => {
+  if (state === 'down') {
+    enableCanvasPanning();
+  } else {
+    disableCanvasPanning();
   }
-);
+}, { hold: true });
 ```
 
 ---
 
-#### **`ShortcutOptions`**
+## 🎯 Scopes & Layering (`default` vs `cascade`)
 
-The `options` object allows you to customize the behavior of a shortcut.
+Keybindy provides two distinct scoping modes to suit any application UI:
 
-| Option           | Type      | Default     | Description                                                                                                                                             |
-| ---------------- | --------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `scope`          | `string`  | `"global"`  | The scope in which the shortcut is active.                                                                                                              |
-| `preventDefault` | `boolean` | `false`     | If `true`, calls `event.preventDefault()` to block the browser's default action.                                                                        |
-| `sequential`     | `boolean` | `false`     | If `true`, treats the key combination as a sequence (e.g., `G` then `H`).                                                                               |
-| `sequenceDelay`  | `number`  | `1000`      | The maximum time (in ms) between key presses for a sequential shortcut.                                                                                 |
-| `triggerOn`      | `string`  | `"keydown"` | For simultaneous shortcuts, specifies whether to trigger on `"keydown"` or `"keyup"`.                                                                   |
-| `hold`           | `boolean` | `false`     | If `true`, treats the shortcut as a "hold" action. The handler will be called on both key down and key up with a `state` argument (`"down"` or `"up"`). |
-| `repeat`         | `boolean` | `false`     | If `true`, allows the shortcut to be repeatedly fired when the key is held down. By default, shortcuts only fire once.                                  |
-| `data`           | `object`  | `{}`        | An object for any custom metadata you want to associate with the shortcut, useful for building features like cheat sheets.                              |
+### A. `default` Mode — Strict Isolation (e.g. Modals & Dialogs)
+In `default` mode, only the single topmost active scope is enabled. All other scopes (like `global`) are completely deactivated while the modal is open.
+
+```ts
+// 1. Register global shortcut
+shortcuts.register(['Delete'], deleteSelectedCard, { scope: 'global' });
+
+// 2. Register modal shortcut
+shortcuts.register(['Esc'], closeModal, { scope: 'modal', enableInInput: true });
+
+// 3. Open Modal
+shortcuts.setActiveScope('modal');
+// -> 'Delete' is now blocked so background elements cannot be deleted!
+
+// 4. Close Modal
+shortcuts.popScope('modal');
+// -> 'global' is restored automatically!
+```
+
+### B. `cascade` Mode — Layered Tools & Priority (e.g. Figma / Photoshop)
+In `cascade` mode, all active scopes work together. Non-conflicting parent shortcuts pass through, while colliding keys are resolved by **numeric priority weights** or stack order.
+
+```ts
+const shortcuts = new ShortcutManager({ scopeMode: 'cascade' });
+
+// Global shortcut
+shortcuts.register(['Space'], panCanvas, { scope: 'global' });
+shortcuts.register(['V'], selectTool, { scope: 'global' });
+
+// Text Tool Scope (higher priority)
+shortcuts.register(['V'], pasteFormattedText, { scope: 'text-editor' });
+shortcuts.setScopePriority('text-editor', 100);
+
+// When 'text-editor' is active:
+// - 'Space' still pans the canvas (passes through)
+// - 'V' triggers pasteFormattedText (overrides global 'V' because 100 > 0)
+```
+
+> [!TIP]
+> **Isolating a Child / Modal in Cascading Mode**: If your app runs in `cascade` mode, but you want a specific modal or dialog to **trap and block** all parent hotkeys, switch to `'default'` mode while the modal is open:
+> ```ts
+> // Open isolated modal
+> shortcuts.setScopeMode('default');
+> shortcuts.setActiveScope('modal');
+>
+> // Close modal & restore cascade
+> shortcuts.popScope('modal');
+> shortcuts.setScopeMode('cascade');
+> ```
 
 ---
 
-#### **`unregister`**
+## 🛡 Guard & Interceptor Hooks (`beforeEach` / `afterEach`)
 
-Removes a previously registered shortcut.
-
-| Parameter | Type     | Required | Description         |
-| --------- | -------- | -------- | ------------------- |
-| `keys`    | `Keys[]` | ✅       | The keys to unbind. |
-
-##### Example
+Add global or scoped middlewares before or after shortcuts execute:
 
 ```ts
-manager.unregister(['ctrl', 'shift', 'k']);
+// 🛑 Guard: Block all shortcuts when an async modal is loading
+const unregisterGuard = shortcuts.beforeEach((shortcut, event) => {
+  if (isAppBusy) {
+    console.warn('Action blocked: App is busy.');
+    return false; // Returning false cancels the shortcut execution
+  }
+});
+
+// 📊 Interceptor: Log analytics after every shortcut in the 'canvas' scope
+shortcuts.afterEach((shortcut, event) => {
+  analytics.track('Shortcut Triggered', { keys: shortcut.keys });
+}, { scope: 'canvas' });
 ```
 
 ---
 
-#### **`enable / disable / toggle`**
+## 📝 Input & Editable Target Handling
 
-Enables, disables, or toggles a shortcut on or off.
+By default, shortcuts won't trigger while the user is typing inside `<input>`, `<textarea>`, `<select>`, or `[contenteditable="true"]` elements when `ignoreInputs: true` is enabled.
 
-| Parameter | Type     | Required | Description |
-| --------- | -------- | -------- | ----------- |
-| `keys`    | `Keys[]` | ✅       |             |
-
-##### Example
+You can customize this globally or per shortcut:
 
 ```ts
-manager.enable(['ctrl', 's']);
-manager.disable(['ctrl', 's']);
-manager.toggle(['ctrl', 's']);
-```
+// Global setting
+const shortcuts = new ShortcutManager({ ignoreInputs: true });
 
----
-
-#### **`enableAll / disableAll`**
-
-Enable or disable all shortcuts — globally or within a specific scope.
-
-| Parameter | Type     | Required | Description                            |
-| --------- | -------- | -------- | -------------------------------------- |
-| `scope`   | `string` | ❌       | scope to enable/disable all shortcuts. |
-
-##### Example
-
-```ts
-manager.enableAll(); // Global
-manager.enableAll('modal'); // Scoped
-
-manager.disableAll(); // Global
-manager.disableAll('modal'); // Scoped
-```
-
----
-
-#### **`getCheatSheet`**
-
-Returns a list of all registered shortcuts. Optionally scoped.
-
-| Parameter | Type     | Required | Description               |
-| --------- | -------- | -------- | ------------------------- |
-| `scope`   | `string` | ❌       | scope to get cheat sheet. |
-
-##### Example
-
-```ts
-manager.getCheatSheet();
-```
-
----
-
-### Scope Management
-
-#### **`getScopes`**
-
-Returns all registered scopes.
-
-##### Example
-
-```ts
-manager.getScopes();
-```
-
----
-
-#### **`getActiveScope`**
-
-Returns the currently active scope.
-
-##### Example
-
-```ts
-manager.getActiveScope();
-```
-
----
-
-#### **`setActiveScope`**
-
-Sets the current active scope.
-
-| Parameter | Type     | Required | Description       |
-| --------- | -------- | -------- | ----------------- |
-| `scope`   | `string` | ✅       | The scope to set. |
-
-##### Example
-
-```ts
-manager.setActiveScope('modal');
-```
-
----
-
-#### **`isScopeActive`**
-
-Checks if a specific scope is currently active.
-
-| Parameter | Type     | Required | Description         |
-| --------- | -------- | -------- | ------------------- |
-| `scope`   | `string` | ✅       | The scope to check. |
-
-##### Example
-
-```ts
-manager.isScopeActive('modal');
-```
-
----
-
-#### **`getScopesInfo`**
-
-Returns information about all scopes or a specific one.
-
-| Parameter | Type     | Required | Description        |
-| --------- | -------- | -------- | ------------------ |
-| `scope`   | `string` | ❌       | scope to get info. |
-
-##### Example
-
-```ts
-manager.getScopesInfo();
-manager.getScopesInfo('modal');
-```
-
----
-
-#### **`pushScope / popScope / resetScope`**
-
-Manage the scope stack.
-
-##### Example
-
-```ts
-manager.pushScope('modal');
-manager.popScope();
-manager.resetScope();
-```
-
----
-
-#### **`destroy`**
-
-Fully destroys the manager instance and removes all bindings.
-
-##### Example
-
-```ts
-manager.destroy();
-```
-
----
-
-#### **`clear`**
-
-Clears the internal state without destroying the instance.
-
-##### Example
-
-```ts
-manager.clear();
-```
-
----
-
-### Event
-
-#### **`onTyping`**
-
-Listen for every typed key. Useful for custom behavior or analytics.
-
-##### Example
-
-```ts
-manager.onTyping(({ key, event }) => {
-  console.log(`Key typed: ${key}`, event);
+// Override per-shortcut: Allow Escape to close dialogs even while focusing an input
+shortcuts.register(['Esc'], closeDialog, {
+  enableInInput: true,
 });
 ```
 
 ---
 
-## Theories & Concepts
+## 📖 API Reference
 
-`@keybindy/core` is designed to provide a flexible and powerful foundation for keyboard shortcut management. This section outlines the core ideas and keybinding types supported by the library.
-
-#### Keybinding Types Supported
-
-We support three primary types of key combinations:
-
-##### 1. Sequential Key Combos
-
-These are keybindings where the user presses keys one after another, like:
-
-```txt
-g → h
-```
-
-This style is commonly seen in editors like Vim or platforms like GitHub, where pressing g followed by h might trigger navigation (e.g., go to the homepage).
-
-- Supported out of the box
-- Timeout configurable between key presses.
-  - `sequenceDelay:` Sets the max time (in ms) allowed between keys.
-- Sequence memory is reset on timeout or invalid input
+### `ShortcutManager` Options
 
 ```ts
-manager.register(
-  ...,
-  ...,
-  {
-    sequential: true,
-    sequenceDelay: 1000
-  });
+const manager = new ShortcutManager({
+  ignoreInputs?: boolean;             // Default: false
+  scopeMode?: 'default' | 'cascade';  // Default: 'default'
+  silent?: boolean;                   // Default: true (suppress debug logs)
+  onShortcutFired?: (info) => void;   // Event telemetry callback
+});
 ```
 
-##### 2. Simultaneous Key Combos
-
-These are triggered when multiple keys are held down together, like:
-
-```txt
-Ctrl + K
-Meta + Shift + P
-```
-
-Perfect for standard "shortcut-style" commands that fire instantly when all keys are down at once.
+### Registration Options (`ShortcutOptions`)
 
 ```ts
-manager.register(
-  ...,
-  ...
-);
+manager.register(keys, handler, {
+  scope?: string;             // Scope identifier (default: 'global')
+  preventDefault?: boolean;   // Calls event.preventDefault()
+  stopPropagation?: boolean;  // Calls event.stopPropagation()
+  sequential?: boolean;       // Treat as sequential chain (e.g. G then D)
+  sequenceDelay?: number;     // Milliseconds allowed between sequential keys
+  hold?: boolean;             // Fires with 'down' and 'up' state
+  repeat?: boolean;           // Allow continuous firing when holding key down
+  enableInInput?: boolean;    // Allow shortcut while typing in inputs
+  ignoreInputs?: boolean;     // Explicitly ignore shortcut in inputs
+  data?: Record<string, any>; // Custom metadata (labels, descriptions for cheat sheets)
+});
 ```
 
-##### 3. Holdable Key Combos
+### Scope & Lifecycle Methods
 
-These are special shortcuts that trigger on both key down and key up. They are ideal for actions that need to persist while a key is held, such as a "push-to-talk" feature.
-
-- **Trigger on Down & Up**: The handler receives a `state` argument (`"down"` or `"up"`).
-- **Stateful**: The manager tracks the active hold state.
-
-```ts
-manager.register(
-  ['Ctrl', 'Shift'],
-  (event, state) => {
-    console.log(`Mic is ${state === 'down' ? 'on' : 'off'}`);
-  },
-  { hold: true }
-);
-```
-
-#### Alias Support
-
-`@keybindy/core` supports aliasing of platform-specific key variations, so your shortcuts work consistently across different operating systems and keyboard layouts:
-
-- `ctrl (left)` / `ctrl (right)` → `ctrl`
-- `shift (left)` / `shift (right)` → `shift`
-- `alt (left)` / `alt (right)` → `alt`
-- `meta (left)` / `meta (right)` → `meta`
-- `cmd` → `meta`
-- `enter` / `numpad enter` → `enter`
+| Method | Description |
+| :--- | :--- |
+| `setActiveScope(scope)` | Sets the current active scope. |
+| `pushScope(scope)` | Pushes a scope onto the stack. |
+| `popScope(scope?)` | Pops the topmost scope or removes a specific target scope. |
+| `setScopeMode('default' \| 'cascade')` | Switches between strict isolation and layered cascading. |
+| `setScopePriority(scope, priority)` | Sets a numeric weight (e.g. `100`) for cascade mode. |
+| `removeScopePriority(scope)` | Clears a scope's custom priority weight. |
+| `beforeEach(hook, options?)` | Registers a guard callback. Return `false` to abort. |
+| `afterEach(hook, options?)` | Registers an interceptor callback after execution. |
+| `enableAll(scope?)` / `disableAll(scope?)` | Enables or disables shortcuts globally or by scope. |
+| `getCheatSheet(scope?)` | Returns all registered shortcuts and custom `data` metadata. |
+| `destroy()` | Cleans up all listeners and memory. |
 
 ---
 
-## Ecosystem
+## 📄 License
 
-Keybindy has modular packages for different platforms. Each package is built to work seamlessly with the core engine.
-
-| Package                                                        | Description                                                                      |
-| -------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| [`@keybindy/core`](https://npmjs.com/package/@keybindy/core)   | The core JavaScript library. Framework-agnostic, fully typed, and tree-shakable. |
-| [`@keybindy/react`](https://npmjs.com/package/@keybindy/react) | React bindings with hooks and components for easy integration.                   |
-| _Coming Soon_                                                  | Stay tuned!                                                                      |
-
----
-
-## Contributing
-
-PRs, issues, and ideas are welcome! See [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
-
-If you're adding a new framework integration (like Vue or Svelte), feel free to open a draft PR — we'd love to collaborate.
-
----
-
-> _Might be new in the shortcut game, but Keybindy’s here to change the frame — fast, flexible, and ready to claim. 🎯_
+MIT © [Keybindy Contributors](https://github.com/keybindyjs/keybindy)

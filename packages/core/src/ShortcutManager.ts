@@ -5,18 +5,18 @@ import type {
   Shortcut,
   ShortcutBinding,
   HoldShortcutHandler,
+  ShortcutManagerOptions,
+  BeforeEachHook,
+  AfterEachHook,
+  HookOptions,
 } from './types';
 import { expandAliases, keyAliases } from './utils/expandAliases';
 import { normalizeKey } from './utils/normalizeKey';
 import { generateUID } from './utils/generateUID';
+import { isInputTarget } from './utils/isInputTarget';
 import { ScopeManager } from './ScopeManager';
 import { EventEmitter } from './utils/eventemitter';
 import { Logger } from './utils/log';
-
-type ShortcutManagerOptions = {
-  onShortcutFired?: (shortcut: Shortcut) => void;
-  silent?: boolean;
-};
 
 /**
  * Manages keyboard shortcuts with support for scopes, enabling/disabling,
@@ -32,16 +32,32 @@ export class ShortcutManager extends ScopeManager {
   }>();
 
   private activeSequences: {
+    shortcutId: string;
     keys: string[];
     buffer: { key: string; time: number }[];
   }[] = [];
   private onShortcutFired: (shortcut: Shortcut) => void = () => {};
   private logger: Logger = new Logger();
+  private ignoreInputs: boolean = false;
+  private beforeHooks: {
+    id: string;
+    hook: BeforeEachHook;
+    options?: HookOptions;
+  }[] = [];
+  private afterHooks: {
+    id: string;
+    hook: AfterEachHook;
+    options?: HookOptions;
+  }[] = [];
 
-  constructor({ onShortcutFired, silent = false }: ShortcutManagerOptions = {}) {
+  constructor({ onShortcutFired, silent = false, ignoreInputs = false, scopeMode }: ShortcutManagerOptions = {}) {
     super();
     this.onShortcutFired = onShortcutFired || (() => {});
     this.logger = new Logger({ silent });
+    this.ignoreInputs = ignoreInputs;
+    if (scopeMode) {
+      this.setScopeMode(scopeMode);
+    }
 
     if (typeof window === 'undefined') {
       if (process.env.NODE_ENV !== 'test') {
@@ -50,12 +66,103 @@ export class ShortcutManager extends ScopeManager {
       return;
     }
 
-    this.start();
-  }
-
-  start() {
     window.addEventListener('keydown', this.handleKeyDown);
     window.addEventListener('keyup', this.handleKeyUp);
+    window.addEventListener('blur', this.handleBlur);
+  }
+
+  /**
+   * Cleans up keys and sequences when window loses focus.
+   * @private
+   */
+  private handleBlur = () => {
+    this.pressedKeys.clear();
+    this.activeHoldShortcuts.clear();
+    this.activeSequences = [];
+  };
+
+  /**
+   * Checks whether a shortcut should be ignored when typing inside an interactive input element.
+   * @private
+   */
+  private shouldIgnoreForInput(shortcut: Shortcut, target: EventTarget | null): boolean {
+    if (!isInputTarget(target)) return false;
+    if (shortcut.options?.enableInInput === true) return false;
+    if (shortcut.options?.ignoreInputs === true) return true;
+    if (shortcut.options?.ignoreInputs === false) return false;
+    return this.ignoreInputs;
+  }
+
+  /**
+   * Checks whether a shortcut matches the filter options for a hook.
+   * @private
+   */
+  private matchesHook(shortcut: Shortcut, options?: HookOptions): boolean {
+    if (!options) return true;
+
+    // Scope check
+    if (options.scope) {
+      const shortcutScope = shortcut.options?.scope || 'global';
+      if (shortcutScope !== options.scope) {
+        return false;
+      }
+    }
+
+    // Keys check
+    if (options.keys && options.keys.length > 0) {
+      const targetBindings = (
+        Array.isArray(options.keys[0]) ? options.keys : [options.keys]
+      ) as unknown as Keys[][];
+
+      const expandedCombos: string[] = [];
+      for (const binding of targetBindings) {
+        const combos = expandAliases(binding);
+        for (const combo of combos) {
+          const normalized = combo.map(k => k.toLowerCase()).sort().join('+');
+          expandedCombos.push(normalized);
+        }
+      }
+
+      const shortcutCombo = [...shortcut.keys].map(k => k.toLowerCase()).sort().join('+');
+      if (!expandedCombos.includes(shortcutCombo)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Runs all matching beforeEach guard hooks.
+   * If any hook returns `false`, aborts execution.
+   * @private
+   */
+  private runBeforeHooks(shortcut: Shortcut, event: KeyboardEvent): boolean {
+    for (const entry of this.beforeHooks) {
+      if (this.matchesHook(shortcut, entry.options)) {
+        const result = entry.hook(shortcut, event);
+        if (result === false) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  /**
+   * Runs all matching afterEach interceptor hooks.
+   * @private
+   */
+  private runAfterHooks(shortcut: Shortcut, event: KeyboardEvent): void {
+    for (const entry of this.afterHooks) {
+      if (this.matchesHook(shortcut, entry.options)) {
+        try {
+          entry.hook(shortcut, event);
+        } catch (err) {
+          this.logger.error(err);
+        }
+      }
+    }
   }
 
   /**
@@ -91,7 +198,7 @@ export class ShortcutManager extends ScopeManager {
   }
 
   /**
-   * Handles `keydown` events, checks for matching shortcuts,
+   * Handles `keydown` events, tracks pressed keys, resolves matching shortcuts,
    * and triggers the appropriate handler.
    * @param e - The keyboard event object.
    * @private
@@ -107,11 +214,41 @@ export class ShortcutManager extends ScopeManager {
     this.typingEmitter.emit({ key: e.key, event: e });
 
     const simultaneousMatches: Shortcut[] = [];
+    const holdMatches: Shortcut[] = [];
+    const sequentialMatches: Shortcut[] = [];
     let sequentialFired = false;
     let holdFired = false;
 
+    const isCascade = this.getScopeMode() === 'cascade';
+    const isShortcutInActiveScope = (s: Shortcut): boolean => {
+      if (!s.enabled) return false;
+      const sScope = s.options?.scope || 'global';
+      if (isCascade) {
+        return this.isScopeActive(sScope);
+      }
+      return sScope === this.getActiveScope();
+    };
+
+    const compareShortcuts = (a: Shortcut, b: Shortcut): Shortcut => {
+      if (isCascade) {
+        const scopeA = a.options?.scope || 'global';
+        const scopeB = b.options?.scope || 'global';
+        const priorityA = this.getScopePriorityValue(scopeA);
+        const priorityB = this.getScopePriorityValue(scopeB);
+
+        if (priorityA !== priorityB) {
+          return priorityA > priorityB ? a : b;
+        }
+      }
+      return a.keys.length >= b.keys.length ? a : b;
+    };
+
     for (const shortcut of this.shortcuts) {
-      if (!shortcut.enabled || (shortcut.options?.scope || 'global') !== this.getActiveScope()) {
+      if (!isShortcutInActiveScope(shortcut)) {
+        continue;
+      }
+
+      if (this.shouldIgnoreForInput(shortcut, e.target)) {
         continue;
       }
 
@@ -121,37 +258,57 @@ export class ShortcutManager extends ScopeManager {
       if (shortcut.options?.hold) {
         if (allMatch && !this.activeHoldShortcuts.has(shortcut.id)) {
           if (e.repeat && !shortcut.options.repeat) continue;
-          if (shortcut.options.preventDefault) e.preventDefault();
-          (shortcut.handler as HoldShortcutHandler)(e, 'down');
-          this.activeHoldShortcuts.add(shortcut.id);
-          this.onShortcutFired(shortcut);
-          holdFired = true;
+          holdMatches.push(shortcut);
         }
       } else if (shortcut.options?.sequential) {
         if (e.repeat) continue; // Sequential shortcuts should not repeat
         const delay = shortcut.options.sequenceDelay ?? 1000;
-        let seq = this.activeSequences.find(
-          s => JSON.stringify(s.keys) === JSON.stringify(expected)
-        );
+        const seqIndex = this.activeSequences.findIndex(s => s.shortcutId === shortcut.id);
 
-        if (!seq) {
+        if (seqIndex === -1) {
+          // No active sequence yet for this shortcut
           if (key === expected[0]) {
-            seq = { keys: expected, buffer: [{ key, time: now }] };
-            this.activeSequences.push(seq);
+            this.activeSequences.push({
+              shortcutId: shortcut.id,
+              keys: expected,
+              buffer: [{ key, time: now }],
+            });
+            if (expected.length === 1) {
+              sequentialMatches.push(shortcut);
+            }
           }
         } else {
-          seq.buffer.push({ key, time: now });
-          seq.buffer = seq.buffer.filter(entry => now - entry.time <= delay);
+          const seq = this.activeSequences[seqIndex];
+          const lastKeyTime = seq.buffer[seq.buffer.length - 1]?.time ?? 0;
+          const isExpired = now - lastKeyTime > delay;
 
-          const pressedSeq = seq.buffer.map(entry => entry.key);
-          const isMatch = expected.every((k, i) => pressedSeq[i] === k);
-
-          if (isMatch && expected.length === pressedSeq.length) {
-            if (shortcut.options.preventDefault) e.preventDefault();
-            (shortcut.handler as (event: KeyboardEvent) => void)(e);
-            this.onShortcutFired(shortcut);
-            this.clearSequence(seq.keys);
-            sequentialFired = true;
+          if (isExpired) {
+            // Sequence expired: check if key can restart from step 1
+            if (key === expected[0]) {
+              seq.buffer = [{ key, time: now }];
+              if (expected.length === 1) {
+                sequentialMatches.push(shortcut);
+              }
+            } else {
+              this.activeSequences.splice(seqIndex, 1);
+            }
+          } else {
+            const nextExpectedIndex = seq.buffer.length;
+            if (key === expected[nextExpectedIndex]) {
+              seq.buffer.push({ key, time: now });
+              if (seq.buffer.length === expected.length) {
+                sequentialMatches.push(shortcut);
+              }
+            } else if (key === expected[0]) {
+              // Reset and restart sequence from step 1
+              seq.buffer = [{ key, time: now }];
+              if (expected.length === 1) {
+                sequentialMatches.push(shortcut);
+              }
+            } else {
+              // Key does not belong to sequence — purge immediately so buffer never gets poisoned/stuck
+              this.activeSequences.splice(seqIndex, 1);
+            }
           }
         }
       } else {
@@ -163,24 +320,58 @@ export class ShortcutManager extends ScopeManager {
       }
     }
 
+    if (holdMatches.length > 0) {
+      const bestHold = holdMatches.reduce((best, current) => compareShortcuts(current, best));
+      if (!this.activeHoldShortcuts.has(bestHold.id)) {
+        if (this.runBeforeHooks(bestHold, e)) {
+          if (bestHold.options?.preventDefault) e.preventDefault();
+          (bestHold.handler as HoldShortcutHandler)(e, 'down');
+          this.activeHoldShortcuts.add(bestHold.id);
+          this.onShortcutFired(bestHold);
+          this.runAfterHooks(bestHold, e);
+          holdFired = true;
+        }
+      }
+    }
+
+    if (sequentialMatches.length > 0) {
+      const bestSequential = sequentialMatches.reduce((best, current) =>
+        compareShortcuts(current, best)
+      );
+      const bestExpected = JSON.stringify(bestSequential.keys.map(k => k.toLowerCase()));
+      this.activeSequences = this.activeSequences.filter(
+        s => JSON.stringify(s.keys) !== bestExpected
+      );
+
+      if (this.runBeforeHooks(bestSequential, e)) {
+        if (bestSequential.options?.preventDefault) e.preventDefault();
+        (bestSequential.handler as (event: KeyboardEvent) => void)(e);
+        this.onShortcutFired(bestSequential);
+        this.runAfterHooks(bestSequential, e);
+        sequentialFired = true;
+      }
+    }
+
     if (holdFired || sequentialFired) {
       return;
     }
 
     if (simultaneousMatches.length > 0) {
       const bestMatch = simultaneousMatches.reduce((best, current) =>
-        current.keys.length > best.keys.length ? current : best
+        compareShortcuts(current, best)
       );
-      if (bestMatch.options?.preventDefault) e.preventDefault();
-      (bestMatch.handler as (event: KeyboardEvent) => void)(e);
-      this.onShortcutFired(bestMatch);
+      if (this.runBeforeHooks(bestMatch, e)) {
+        if (bestMatch.options?.preventDefault) e.preventDefault();
+        (bestMatch.handler as (event: KeyboardEvent) => void)(e);
+        this.onShortcutFired(bestMatch);
+        this.runAfterHooks(bestMatch, e);
+      }
     }
 
     this.activeSequences = this.activeSequences.filter(seq => {
-      const delay =
-        this.shortcuts.find(s => JSON.stringify(s.keys) === JSON.stringify(seq.keys))?.options
-          ?.sequenceDelay ?? 1000;
-      return now - seq.buffer[0]?.time <= delay;
+      const shortcut = this.shortcuts.find(s => s.id === seq.shortcutId);
+      const delay = shortcut?.options?.sequenceDelay ?? 1000;
+      return now - (seq.buffer[seq.buffer.length - 1]?.time ?? 0) <= delay;
     });
   };
 
@@ -190,26 +381,53 @@ export class ShortcutManager extends ScopeManager {
    * @private
    */
   private clearSequence(keys: string[]) {
-    this.activeSequences = this.activeSequences.filter(
-      s => JSON.stringify(s.keys) !== JSON.stringify(keys)
-    );
+    const target = JSON.stringify(keys.map(k => k.toLowerCase()));
+    this.activeSequences = this.activeSequences.filter(s => JSON.stringify(s.keys) !== target);
   }
 
   /**
-   * Handles `keyup` events by removing the released key from the pressed keys set.
+   * Handles `keyup` events, resolves hold actions or `keyup`-triggered shortcuts,
+   * and updates pressed key tracking.
    * @param e - The keyboard event object.
    * @private
    */
   private handleKeyUp = (e: KeyboardEvent) => {
     const key = normalizeKey(e.code).toLowerCase();
 
+    const isCascade = this.getScopeMode() === 'cascade';
+    const isShortcutInActiveScope = (s: Shortcut): boolean => {
+      if (!s.enabled) return false;
+      const sScope = s.options?.scope || 'global';
+      if (isCascade) {
+        return this.isScopeActive(sScope);
+      }
+      return sScope === this.getActiveScope();
+    };
+
+    const compareShortcuts = (a: Shortcut, b: Shortcut): Shortcut => {
+      if (isCascade) {
+        const scopeA = a.options?.scope || 'global';
+        const scopeB = b.options?.scope || 'global';
+        const priorityA = this.getScopePriorityValue(scopeA);
+        const priorityB = this.getScopePriorityValue(scopeB);
+
+        if (priorityA !== priorityB) {
+          return priorityA > priorityB ? a : b;
+        }
+      }
+      return a.keys.length >= b.keys.length ? a : b;
+    };
+
     // Handle hold shortcuts
     for (const shortcutId of this.activeHoldShortcuts) {
       const shortcut = this.shortcuts.find(s => s.id === shortcutId);
-      if (shortcut && shortcut.keys.map(k => k.toLowerCase()).includes(key)) {
-        if (shortcut.options?.preventDefault) e.preventDefault();
-        (shortcut.handler as HoldShortcutHandler)(e, 'up');
-        this.activeHoldShortcuts.delete(shortcutId);
+      if (shortcut && !this.shouldIgnoreForInput(shortcut, e.target) && shortcut.keys.map(k => k.toLowerCase()).includes(key)) {
+        if (this.runBeforeHooks(shortcut, e)) {
+          if (shortcut.options?.preventDefault) e.preventDefault();
+          (shortcut.handler as HoldShortcutHandler)(e, 'up');
+          this.activeHoldShortcuts.delete(shortcutId);
+          this.runAfterHooks(shortcut, e);
+        }
       }
     }
 
@@ -217,8 +435,8 @@ export class ShortcutManager extends ScopeManager {
     const simultaneousMatches: Shortcut[] = [];
     for (const shortcut of this.shortcuts) {
       if (
-        shortcut.enabled &&
-        (shortcut.options?.scope || 'global') === this.getActiveScope() &&
+        isShortcutInActiveScope(shortcut) &&
+        !this.shouldIgnoreForInput(shortcut, e.target) &&
         shortcut.options?.triggerOn === 'keyup' &&
         !shortcut.options.sequential &&
         !shortcut.options.hold
@@ -236,11 +454,14 @@ export class ShortcutManager extends ScopeManager {
 
     if (simultaneousMatches.length > 0) {
       const bestMatch = simultaneousMatches.reduce((best, current) =>
-        current.keys.length > best.keys.length ? current : best
+        compareShortcuts(current, best)
       );
-      if (bestMatch.options?.preventDefault) e.preventDefault();
-      (bestMatch.handler as (event: KeyboardEvent) => void)(e);
-      this.onShortcutFired(bestMatch);
+      if (this.runBeforeHooks(bestMatch, e)) {
+        if (bestMatch.options?.preventDefault) e.preventDefault();
+        (bestMatch.handler as (event: KeyboardEvent) => void)(e);
+        this.onShortcutFired(bestMatch);
+        this.runAfterHooks(bestMatch, e);
+      }
     }
 
     this.pressedKeys.delete(key);
@@ -255,11 +476,12 @@ export class ShortcutManager extends ScopeManager {
    * @param options - Optional configuration including scope, ID, and metadata.
    */
   register(binding: ShortcutBinding, handler: ShortcutHandler, options?: ShortcutOptions) {
-    const bindings: Keys[][] = Array.isArray(binding[0])
-      ? (binding as Keys[][])
-      : [binding as Keys[]];
+    const bindings = (
+      Array.isArray(binding[0]) ? binding : [binding]
+    ) as unknown as Keys[][];
 
     const id = options?.data?.id || generateUID();
+    const targetScope = options?.scope || 'global';
 
     for (const binding of bindings) {
       const expandedCombos = expandAliases(binding);
@@ -270,8 +492,7 @@ export class ShortcutManager extends ScopeManager {
         this.shortcuts = this.shortcuts.filter(
           s =>
             JSON.stringify(s.keys) !== JSON.stringify(normalized) ||
-            s.options?.scope !== (options?.scope || this.getActiveScope()) ||
-            s.id !== id
+            (s.options?.scope || 'global') !== targetScope
         );
 
         this.shortcuts.push({
@@ -282,31 +503,39 @@ export class ShortcutManager extends ScopeManager {
             ...options,
             sequential: options?.sequential || false,
             sequenceDelay: options?.sequenceDelay || 1000,
-            scope: options?.scope || this.getActiveScope(),
+            scope: targetScope,
             hold: options?.hold || false,
             triggerOn: options?.triggerOn || 'keydown',
             repeat: options?.repeat === true,
+            ignoreInputs: options?.ignoreInputs,
+            enableInInput: options?.enableInInput,
           },
           enabled: true,
         });
-        this.pushScope(options?.scope ?? 'global');
+        this.pushScope(targetScope);
       }
     }
   }
 
   /**
    * Unregisters a previously registered shortcut based on the key combination and scope.
-   * @param keys - The key combination to remove.
+   * @param keys - The key combination or list of combinations to remove.
    * @param scope - The scope in which the shortcut was registered (default: "global").
    */
-  unregister(keys: Keys[], scope: string = 'global') {
-    const expandedCombos = expandAliases(keys);
+  unregister(keys: ShortcutBinding, scope: string = 'global') {
+    const bindings = (
+      Array.isArray(keys[0]) ? keys : [keys]
+    ) as unknown as Keys[][];
 
-    for (const combo of expandedCombos) {
-      const normalized = combo.map(k => k.toLowerCase() as Keys);
-      this.shortcuts = this.shortcuts.filter(
-        s => s.options?.scope !== scope || JSON.stringify(s.keys) !== JSON.stringify(normalized)
-      );
+    for (const binding of bindings) {
+      const expandedCombos = expandAliases(binding as any);
+
+      for (const combo of expandedCombos) {
+        const normalized = combo.map(k => k.toLowerCase() as Keys);
+        this.shortcuts = this.shortcuts.filter(
+          s => s.options?.scope !== scope || JSON.stringify(s.keys) !== JSON.stringify(normalized)
+        );
+      }
     }
   }
 
@@ -368,24 +597,67 @@ export class ShortcutManager extends ScopeManager {
   }
 
   /**
+   * Registers a guard hook that runs before any matching shortcut executes.
+   * Return `false` from the hook function to cancel/abort execution.
+   * @param hook - The guard function to run.
+   * @param options - Optional filters (scope, keys).
+   * @returns Unsubscribe function to remove the hook.
+   *
+   * @example
+   * const unregister = manager.beforeEach((shortcut, event) => {
+   *   if (isReadOnly) return false; // Aborts shortcut
+   * });
+   */
+  beforeEach(hook: BeforeEachHook, options?: HookOptions): () => void {
+    const id = generateUID();
+    this.beforeHooks.push({ id, hook, options });
+    return () => {
+      this.beforeHooks = this.beforeHooks.filter(h => h.id !== id);
+    };
+  }
+
+  /**
+   * Registers an interceptor hook that runs after any matching shortcut executes.
+   * @param hook - The hook function to run.
+   * @param options - Optional filters (scope, keys).
+   * @returns Unsubscribe function to remove the hook.
+   *
+   * @example
+   * const unregister = manager.afterEach((shortcut, event) => {
+   *   markDirty();
+   * });
+   */
+  afterEach(hook: AfterEachHook, options?: HookOptions): () => void {
+    const id = generateUID();
+    this.afterHooks.push({ id, hook, options });
+    return () => {
+      this.afterHooks = this.afterHooks.filter(h => h.id !== id);
+    };
+  }
+
+  /**
    * Clears the internal state, removing all pressed keys and event listeners.
    * This does not unregister shortcuts.
    */
   clear() {
     this.pressedKeys.clear();
     this.activeHoldShortcuts.clear();
+    this.activeSequences = [];
     window.removeEventListener('keydown', this.handleKeyDown);
     window.removeEventListener('keyup', this.handleKeyUp);
+    window.removeEventListener('blur', this.handleBlur);
     this.logger.log('Instance cleared');
   }
 
   /**
-   * Completely destroys the manager instance by clearing all listeners and shortcuts.
+   * Completely destroys the manager instance by clearing all listeners, shortcuts, and hooks.
    * Prevents further registration of shortcuts.
    */
   destroy() {
     this.clear();
     this.shortcuts = [];
+    this.beforeHooks = [];
+    this.afterHooks = [];
     this.resetScope();
     this.activeSequences = [];
     this.activeHoldShortcuts.clear();
