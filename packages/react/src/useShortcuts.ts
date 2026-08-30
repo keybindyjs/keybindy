@@ -165,6 +165,7 @@ export const useShortcuts = (
 
   // Keep a ref of current handlers so our stable handler closures never go stale.
   const handlersRef = React.useRef<Record<string, ShortcutHandler>>({});
+  handlersRef.current = {};
   shortcuts.forEach(({ keys, handler }) => {
     handlersRef.current[JSON.stringify(keys)] = handler;
   });
@@ -242,7 +243,10 @@ export const useShortcuts = (
         removeScopePriority(scope);
       }
       if (scope !== 'global') {
-        popScope(scope);
+        const remaining = manager.getCheatSheet(scope);
+        if (!remaining || remaining.length === 0) {
+          popScope(scope);
+        }
       }
       if (scopeMode && prevScopeMode !== undefined) {
         setScopeMode(prevScopeMode);

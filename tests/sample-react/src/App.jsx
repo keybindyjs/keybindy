@@ -3,7 +3,7 @@ import { Keybindy, useKeybindy } from '@keybindy/react';
 
 function App() {
   const [isOpen, setIsOpen] = useState(false);
-  const [isModelOpen, setIsModelOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const s = useKeybindy();
 
   useEffect(() => {
@@ -116,9 +116,9 @@ function App() {
         </p>
         <p className="read-the-docs">Click on the Vite and React logos to learn more</p>
 
-        <button onClick={() => setIsModelOpen(!isModelOpen)}>Open</button>
+        <button onClick={() => setIsModalOpen(!isModalOpen)}>Open</button>
 
-        {isModelOpen && <Model setIsModelOpen={setIsModelOpen} />}
+        {isModalOpen && <Modal setIsModalOpen={setIsModalOpen} />}
         <input type="text" />
         <textarea name="" id=""></textarea>
       </Keybindy>
@@ -128,11 +128,11 @@ function App() {
 
 export default App;
 
-const Model = ({ setIsModelOpen }) => {
-  return (<Keybindy scope='dialog' shortcuts={[{ keys: ["X"], handler: () => { console.log("x presed from model") } }]}>
+const Modal = ({ setIsModalOpen }) => {
+  return (<Keybindy scope='dialog' shortcuts={[{ keys: ["X"], handler: () => { console.log("x pressed from Modal") } }]}>
     <div style={{ background: "gray", color: "white", padding: "10px", borderRadius: "5px", position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "50vw", aspectRatio: "16 / 9" }}>
       <p>Open</p>
-      <button onClick={() => setIsModelOpen(false)}>Close</button>
+      <button onClick={() => setIsModalOpen(false)}>Close</button>
     </div>
   </Keybindy>)
 }

@@ -675,6 +675,27 @@ describe('ShortcutManager', () => {
       expect(beforeHook).toHaveBeenCalledOnce(); // Still 1, not called again
       expect(handler).toHaveBeenCalledTimes(2);
     });
+
+    it('should preserve key order when filtering hooks on sequential shortcuts', () => {
+      const gdBeforeHook = vi.fn();
+      const dgBeforeHook = vi.fn();
+
+      manager.beforeEach(gdBeforeHook, { keys: ['G', 'D'] });
+      manager.beforeEach(dgBeforeHook, { keys: ['D', 'G'] });
+
+      const gdHandler = vi.fn();
+      manager.register(['G', 'D'], gdHandler, { sequential: true });
+
+      // Trigger G then D sequence
+      dispatchKeyEvent('keydown', 'KeyG');
+      dispatchKeyEvent('keyup', 'KeyG');
+      dispatchKeyEvent('keydown', 'KeyD');
+      dispatchKeyEvent('keyup', 'KeyD');
+
+      expect(gdHandler).toHaveBeenCalledOnce();
+      expect(gdBeforeHook).toHaveBeenCalledOnce();
+      expect(dgBeforeHook).not.toHaveBeenCalled();
+    });
   });
 });
 

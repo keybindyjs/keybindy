@@ -114,16 +114,21 @@ export class ShortcutManager extends ScopeManager {
         Array.isArray(options.keys[0]) ? options.keys : [options.keys]
       ) as unknown as Keys[][];
 
+      const isSequential = Boolean(shortcut.options?.sequential);
+      const normalizeCombo = (combo: Keys[]): string => {
+        const ordered = isSequential ? combo : [...combo].sort();
+        return ordered.map(k => k.toLowerCase()).join(isSequential ? '>' : '+');
+      };
+
       const expandedCombos: string[] = [];
       for (const binding of targetBindings) {
         const combos = expandAliases(binding);
         for (const combo of combos) {
-          const normalized = combo.map(k => k.toLowerCase()).sort().join('+');
-          expandedCombos.push(normalized);
+          expandedCombos.push(normalizeCombo(combo));
         }
       }
 
-      const shortcutCombo = [...shortcut.keys].map(k => k.toLowerCase()).sort().join('+');
+      const shortcutCombo = normalizeCombo([...shortcut.keys] as Keys[]);
       if (!expandedCombos.includes(shortcutCombo)) {
         return false;
       }

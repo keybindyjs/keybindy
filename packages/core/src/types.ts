@@ -318,7 +318,7 @@ export type Key = Keys | (string & {});
  * It can be a single combination (e.g., `['Ctrl', 'S']`) or multiple
  * combinations for the same shortcut (e.g., `[['Ctrl', 'K'], ['Meta', 'K']]`).
  */
-export type ShortcutBinding = (Key | Key[])[];
+export type ShortcutBinding = Key[] | Key[][];
 
 /**
  * Hook function executed before a shortcut handler runs.
@@ -349,7 +349,7 @@ export type HookOptions = {
    * Target specific key combination(s) (e.g. `['Delete']` or `[['Ctrl', 'S'], ['Meta', 'S']]`).
    * If omitted or empty, applies to all shortcuts in the scope.
    */
-  keys?: (Key | Key[])[];
+  keys?: Key[] | Key[][];
 };
 
 

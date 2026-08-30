@@ -22,6 +22,7 @@ const mockManagerInstance = {
   clearScopePriority: vi.fn(),
   setScopeMode: vi.fn(),
   getScopeMode: vi.fn(() => 'default'),
+  getCheatSheet: vi.fn((): any[] => []),
   beforeEach: vi.fn(() => vi.fn()),
   afterEach: vi.fn(() => vi.fn()),
 };
@@ -112,6 +113,15 @@ describe('<Keybindy /> Component', () => {
     unmount();
 
     expect(mockManagerInstance.popScope).toHaveBeenCalledOnce();
+  });
+
+  it('should not popScope if other shortcuts still remain in the same scope', async () => {
+    mockManagerInstance.getCheatSheet.mockReturnValueOnce([{ keys: ['Ctrl', 'Z'] }]);
+    const { unmount } = render(<Keybindy scope="editor" />);
+
+    unmount();
+
+    expect(mockManagerInstance.popScope).not.toHaveBeenCalled();
   });
 
   it('should handle priority prop by setting and removing numeric scope priority', async () => {
