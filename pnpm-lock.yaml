@@ -104,8 +104,8 @@ importers:
   tests/sample-project:
     dependencies:
       '@keybindy/core':
-        specifier: ^1.1.6
-        version: 1.1.7(typescript@5.9.2)
+        specifier: workspace:*
+        version: link:../../packages/core
     devDependencies:
       vite:
         specifier: ^6.2.0
@@ -673,11 +673,6 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.29':
     resolution: {integrity: sha512-uw6guiW/gcAGPDhLmd77/6lW8QLeiV5RUTsAX46Db6oLhGaVj4lhnPwb184s1bkc8kdVg/+h988dro8GRDpmYQ==}
-
-  '@keybindy/core@1.1.7':
-    resolution: {integrity: sha512-IXcPAb5CIlPVVDQcsoir1m7OaJvfboWwYftQukYT87EZkKV2VNZVjPLCsUp5/eJBzq7FuMNMj22vM9UPOFTO7w==}
-    peerDependencies:
-      typescript: ^5.0.0
 
   '@manypkg/find-root@1.1.0':
     resolution: {integrity: sha512-mki5uBvhHzO8kYYix/WRy2WX8S3B5wdVSc9D6KcU5lQNglP2yt58/VfLuAK49glRXChosY8ap2oJ1qgma3GUVA==}
@@ -2652,10 +2647,6 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.4
-
-  '@keybindy/core@1.1.7(typescript@5.9.2)':
-    dependencies:
-      typescript: 5.9.2
 
   '@manypkg/find-root@1.1.0':
     dependencies:

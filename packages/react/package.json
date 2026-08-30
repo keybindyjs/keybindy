@@ -45,7 +45,6 @@
   ],
   "scripts": {
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",
-    "publish": "npm publish --access public",
     "prebuild": "rm -rf dist",
     "build": "rollup -c",
     "dev": "rollup -c -w",
@@ -61,5 +60,9 @@
   "dependencies": {
     "@keybindy/core": "workspace:*",
     "react": "^19.1.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   }
 }
