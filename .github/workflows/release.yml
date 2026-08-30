@@ -18,20 +18,33 @@ jobs:
       pull-requests: write
       id-token: write
     steps:
-      - name: Checkout
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
+      - name: Resolve pnpm version
+        id: pnpm-version
+        shell: bash
+        run: echo "version=$(jq --raw-output '.packageManager | split("@")[1] | split("+")[0]' package.json)" >> "$GITHUB_OUTPUT"
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@91ab88e2619ed1f46221f0ba42d1492c02baf788
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
         with:
+          version: ${{ steps.pnpm-version.outputs.version }}
           run_install: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
+        uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
+
+      - name: Ensure npm supports OIDC trusted publishing
+        shell: bash
+        run: |
+          npm install -g npm@11.18.0
+          node -v
+          npm -v
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -42,6 +55,6 @@ jobs:
           pnpm build
 
       - name: Publish to NPM
-        run: pnpm --filter "./packages/**" publish --access public --no-git-checks
+        run: pnpm --filter "./packages/**" publish --access public --provenance --no-git-checks
         env:
           NPM_CONFIG_PROVENANCE: true
