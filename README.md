@@ -1,101 +1,102 @@
 # Keybindy
 
-**A lightweight, fast, and framework-agnostic TypeScript library for managing keyboard shortcuts in modern web applications.**
+<p align="center">
+  <strong>The lightweight, framework-agnostic keyboard shortcut engine for modern web apps.</strong><br />
+  <em>Fast, tiny, type-safe, and zero dependencies.</em>
+</p>
 
-Keybindy provides a simple yet powerful API to register, manage, and scope keyboard shortcuts with a tiny footprint and zero dependencies. It is designed to be flexible, tree-shakeable, and easy to integrate into any project, from vanilla JavaScript to React.
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+<p align="center">
+  <a href="https://github.com/keybindyjs/keybindy/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat&colorA=18181B&colorB=6366F1" alt="MIT License" /></a>
+  <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-Ready-blue?style=flat&colorA=18181B&colorB=3178C6" alt="TypeScript" /></a>
+  <a href="https://pnpm.io/"><img src="https://img.shields.io/badge/pnpm-monorepo-orange?style=flat&colorA=18181B&colorB=F69220" alt="pnpm" /></a>
+</p>
 
 ---
 
-## About Keybindy
+## 🎯 About Keybindy
 
-Keyboard shortcuts are essential for a productive user experience, but managing them across different components, contexts, and frameworks can be complex. Keybindy solves this by providing a robust, centralized, and framework-agnostic solution.
+Handling keyboard shortcuts in modern web applications shouldn't require messy event listeners, broken modal state, or bulky dependencies.
 
-- **Tiny & Dependency-Free**: Approximately 2KB gzipped, with no external dependencies.
-- **Framework-Agnostic**: Works with Vanilla JS, React, Vue, Svelte, and any other framework.
-- **Simple yet Powerful API**: Clean and intuitive methods to register, scope, and manage shortcuts.
-- **Type-Safe**: Written entirely in TypeScript for a great developer experience.
-- **SSR-Safe**: Designed to work flawlessly in server-side rendering environments like Next.js.
+**Keybindy** is a centralized, high-performance keyboard shortcut engine (~2KB gzipped) designed to handle everything from simple hotkeys to complex Figma/Vim-style layered tools with ease:
 
-## Packages
+- **Simultaneous, Hold, & Sequential Chains**: Support for chords (`Ctrl+Shift+P`), holdable push-to-talk keys, and Vim sequences (`G` then `D`).
+- **Modal Isolation & Cascading Tools**: Strict scope isolation (`default` mode) or layered priority overrides (`cascade` mode).
+- **Smart Input Detection**: Automatically ignores keystrokes when typing in inputs, textareas, and contenteditables (with per-shortcut overrides).
+- **Lifecycle Safety in React**: Stable ref architecture that completely eliminates hook "blinking" and stale closures.
+- **Zero Dependencies & 100% Type-Safe**: Written in TypeScript with rich autocomplete.
 
-This repository is a monorepo managed by [pnpm](https://pnpm.io/). It contains the following packages:
+---
 
-| Package                               | Version                                                                                                         | Description                                                                  | Docs                               |
-| ------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------------------------------- |
-| [`@keybindy/core`](./packages/core)   | [![npm version](https://badge.fury.io/js/@keybindy%2Fcore.svg)](https://www.npmjs.com/package/@keybindy/core)   | The core, framework-agnostic shortcut management library.                    | [Docs](./packages/core/README.md)  |
-| [`@keybindy/react`](./packages/react) | [![npm version](https://badge.fury.io/js/@keybindy%2Freact.svg)](https://www.npmjs.com/package/@keybindy/react) | React components and hooks for seamless integration with React applications. | [Docs](./packages/react/README.md) |
+## 📦 Packages
 
-## Installation
+| Package | Version | Description | Docs |
+| :--- | :--- | :--- | :--- |
+| [`@keybindy/core`](./packages/core) | [![npm version](https://img.shields.io/npm/v/@keybindy/core.svg?style=flat&colorA=18181B&colorB=3B82F6)](https://www.npmjs.com/package/@keybindy/core) | Core framework-agnostic shortcut engine. | [Core Docs](./packages/core/README.md) |
+| [`@keybindy/react`](./packages/react) | [![npm version](https://img.shields.io/npm/v/@keybindy/react.svg?style=flat&colorA=18181B&colorB=3B82F6)](https://www.npmjs.com/package/@keybindy/react) | Modern React hooks & components (`useShortcut`, `useShortcuts`, `<Keybindy />`). | [React Docs](./packages/react/README.md) |
 
-Install the package you need using your preferred package manager:
+---
 
-```bash
-# For the core library
-pnpm add @keybindy/core
+## 🚀 Quick Look
 
-# For the React integration
-pnpm add @keybindy/react
-```
-
-## Getting Started
-
-Here is a quick example of how to use `@keybindy/core` in a vanilla JavaScript project.
+### Vanilla JS / Framework-Agnostic (`@keybindy/core`)
 
 ```ts
 import ShortcutManager from '@keybindy/core';
 
-// 1. Initialize the manager
-const manager = new ShortcutManager();
+const shortcuts = new ShortcutManager({ ignoreInputs: true });
 
-// 2. Define a handler
-const saveDocument = () => {
-  console.log('Document saved!');
-};
+// Register shortcut
+shortcuts.register(['Ctrl', 'S'], () => {
+  saveDocument();
+}, { preventDefault: true });
 
-// 3. Register the shortcut
-manager.register(['Ctrl', 'S'], saveDocument, {
-  // Optional: prevent the browser's default save action
-  preventDefault: true,
-});
+// Sequential Vim-style shortcut (G then D)
+shortcuts.register(['G', 'D'], () => {
+  navigateToDashboard();
+}, { sequential: true });
 ```
 
-For framework-specific usage, please see the `README.md` file in the corresponding package directory.
+### React (`@keybindy/react`)
 
-## Development and Contributing
+```tsx
+import { useShortcut, useShortcuts } from '@keybindy/react';
 
-This project is a monorepo, and we welcome contributions! To get started with local development, follow these steps:
+function Canvas() {
+  const [scale, setScale] = useState(1);
 
-1.  **Clone the repository:**
+  // ⚡️ Always accesses latest state with ZERO re-registration flickering
+  useShortcut(['Ctrl', '+'], () => setScale(s => s + 0.1), {
+    preventDefault: true,
+  });
 
-    ```bash
-    git clone https://github.com/keybindyjs/keybindy.git
-    cd keybindy
-    ```
+  useShortcuts([
+    { keys: ['Space'], handler: (e, state) => setPanning(state === 'down'), options: { hold: true } },
+    { keys: ['Esc'], handler: deselectAll, options: { enableInInput: true } },
+  ]);
+}
+```
 
-2.  **Install dependencies:**
+---
 
-    This project uses `pnpm` for workspace management. Install it if you haven't already (`npm install -g pnpm`), then run:
+## 🛠 Local Development & Testing
 
-    ```bash
-    pnpm install
-    ```
+```bash
+# 1. Clone repo
+git clone https://github.com/keybindyjs/keybindy.git
+cd keybindy
 
-3.  **Run tests:**
+# 2. Install dependencies
+pnpm install
 
-    You can run tests for all packages or for a specific one.
+# 3. Run all unit tests
+pnpm test
 
-    ```bash
-    # Run all tests
-    pnpm test
+# 4. Build packages
+pnpm build
+```
 
-    # Run tests for a specific package (e.g., @keybindy/react)
-    pnpm --filter @keybindy/react test
-    ```
+---
 
-We encourage you to open an issue or a pull request if you have ideas for improvement or have found a bug.
+## 📄 License
 
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](./LICENSE.md) file for details.
+MIT © [Keybindy Contributors](https://github.com/keybindyjs/keybindy)

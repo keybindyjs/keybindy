@@ -231,7 +231,40 @@ export interface ShortcutOptions {
    * - `true`: The handler will be fired repeatedly as the OS sends `keydown` events.
    */
   repeat?: boolean;
+  /**
+   * Whether to ignore this shortcut when the user is typing inside an input, textarea, select, or contenteditable element.
+   */
+  ignoreInputs?: boolean;
+  /**
+   * Explicitly allow this shortcut inside inputs, textareas, selects, and contenteditables.
+   * Takes precedence over manager-level `ignoreInputs: true`.
+   */
+  enableInInput?: boolean;
 }
+
+/**
+ * Options for configuring the ShortcutManager instance.
+ */
+export type ShortcutManagerOptions = {
+  /**
+   * Callback for when any shortcut is fired.
+   */
+  onShortcutFired?: (shortcut: Shortcut) => void;
+  /**
+   * Whether to suppress debug logs in console.
+   */
+  silent?: boolean;
+  /**
+   * Global default: ignore shortcuts when user is typing inside an input, textarea, select, or contenteditable.
+   * Defaults to `false`. Can be overridden per shortcut with `enableInInput: true` or `ignoreInputs: false`.
+   */
+  ignoreInputs?: boolean;
+  /**
+   * Initial scope resolution mode ('default' | 'cascade').
+   * Defaults to `'default'`.
+   */
+  scopeMode?: ScopeMode;
+};
 
 /**
  * Defines a keyboard shortcut.
@@ -260,8 +293,63 @@ export interface Shortcut {
 }
 
 /**
+ * Operating mode for scope resolution in ShortcutManager:
+ * - 'default': Traditional mode where only a single active scope is enabled and all others are disabled.
+ * - 'cascade': Cascading mode where multiple scopes are active with numeric priority resolution,
+ *   resolving key collisions to higher-priority scopes (higher number) while allowing uncommon shortcuts across all active scopes to run.
+ */
+export type ScopeMode = 'default' | 'cascade';
+
+export type ScopePriorityRecord = Record<string, number>;
+
+export type ScopePriorityInput =
+  | ScopePriorityRecord
+  | Map<string, number>
+  | ((prev: ScopePriorityRecord) => ScopePriorityRecord);
+
+
+/**
+ * Represents a key input type: all supported Keys literals with autocompletion support for custom string names.
+ */
+export type Key = Keys | (string & {});
+
+/**
  * Defines the key combinations that can trigger a shortcut.
  * It can be a single combination (e.g., `['Ctrl', 'S']`) or multiple
  * combinations for the same shortcut (e.g., `[['Ctrl', 'K'], ['Meta', 'K']]`).
  */
-export type ShortcutBinding = Keys[] | Keys[][];
+export type ShortcutBinding = Key[] | Key[][];
+
+/**
+ * Hook function executed before a shortcut handler runs.
+ * Returning `false` will cancel/abort the shortcut execution and prevent subsequent afterEach hooks.
+ */
+export type BeforeEachHook = (
+  shortcut: Shortcut,
+  event: KeyboardEvent
+) => boolean | void;
+
+/**
+ * Hook function executed after a shortcut handler has successfully run.
+ */
+export type AfterEachHook = (
+  shortcut: Shortcut,
+  event: KeyboardEvent
+) => void;
+
+/**
+ * Filter options for `beforeEach` and `afterEach` hooks.
+ */
+export type HookOptions = {
+  /**
+   * Target specific scope (defaults to all active scopes).
+   */
+  scope?: string;
+  /**
+   * Target specific key combination(s) (e.g. `['Delete']` or `[['Ctrl', 'S'], ['Meta', 'S']]`).
+   * If omitted or empty, applies to all shortcuts in the scope.
+   */
+  keys?: Key[] | Key[][];
+};
+
+

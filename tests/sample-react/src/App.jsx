@@ -1,16 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Keybindy, ShortcutLabel, useKeybindy } from '@keybindy/react';
+import { Keybindy, useKeybindy } from '@keybindy/react';
 
 function App() {
   const [isOpen, setIsOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const s = useKeybindy();
 
   useEffect(() => {
-    s.register(['Enter'], () => {
-      console.log('Enter key pressed!');
-    });
-    console.log(s.getCheatSheet())
-  }, [s]);
+    console.log(s.getScopePriority())
+  }, [s])
 
 
   return (
@@ -63,6 +61,11 @@ function App() {
                 variable++;
                 console.log('Z pressed:', variable);
               },
+              options: {
+                repeat: true,
+                // ignoreInputs: true
+
+              }
             },
             {
               keys: ['X'],
@@ -74,22 +77,6 @@ function App() {
           ];
         }}>
 
-        <div>
-          <ShortcutLabel
-            keys={[["ctrl", "a", "shift"]]}
-          // render={(keys) => {
-          //   console.log(keys)
-          //   return keys.map((key) => (
-          //     <span
-          //       key={key}
-          //       className="text-xs font-medium text-foreground rounded px-2 py-1 bg-muted border-muted select-auto"
-          //     >
-          //       {key}
-          //     </span>
-          //   ));
-          // }}
-          />
-        </div>
         <h1>Vite + React</h1>
         <button onClick={() => setIsOpen(!isOpen)}>Toggle</button>
         {isOpen && (
@@ -128,9 +115,24 @@ function App() {
           Edit <code>src/App.jsx</code> and save to test HMR
         </p>
         <p className="read-the-docs">Click on the Vite and React logos to learn more</p>
+
+        <button onClick={() => setIsModalOpen(!isModalOpen)}>Open</button>
+
+        {isModalOpen && <Modal setIsModalOpen={setIsModalOpen} />}
+        <input type="text" />
+        <textarea name="" id=""></textarea>
       </Keybindy>
     </Keybindy>
   );
 }
 
 export default App;
+
+const Modal = ({ setIsModalOpen }) => {
+  return (<Keybindy scope='dialog' shortcuts={[{ keys: ["X"], handler: () => { console.log("x pressed from Modal") } }]}>
+    <div style={{ background: "gray", color: "white", padding: "10px", borderRadius: "5px", position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "50vw", aspectRatio: "16 / 9" }}>
+      <p>Open</p>
+      <button onClick={() => setIsModalOpen(false)}>Close</button>
+    </div>
+  </Keybindy>)
+}

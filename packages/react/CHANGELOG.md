@@ -1,5 +1,26 @@
 # @keybindy/react
 
+## [2.0.0] - 2026-08-30
+
+### Major Features & Improvements
+
+- **New `useShortcut` & `useShortcuts` Hooks**:
+  - Introduced `useShortcut(keys, handler, options?)` for ultra-clean single-shortcut bindings.
+  - Introduced `useShortcuts(shortcuts, options?)` for declarative multi-shortcut definitions.
+  - **Zero Lifecycle Blinking & Zero Stale Closures**: Powered by a stable ref architecture where listeners are registered once on mount and unregister on unmount, while callbacks always execute with the freshest state and props.
+- **Cascading Scope & Mode Support**:
+  - Added `scopeMode?: 'default' | 'cascade'` and `priority?: number` props to `<Keybindy />`, `useShortcuts`, and `useShortcut`.
+  - Automatic cleanup on unmount: restores previous scope mode, cleans up priority weights, and pops unmounted scopes.
+- **Dedicated Guard & Interceptor Hooks**:
+  - Added `useBeforeShortcut(hook, options?)` and `useAfterShortcut(hook, options?)`.
+- **Programmatic Control Hook Renamed**:
+  - Renamed manager hook to `useShortcutManager` for crystal-clear intent.
+  - Retained `useKeybindy` as a direct alias for 100% backward compatibility.
+- **100% Headless**:
+  - Removed `ShortcutLabel` to keep the library purely headless and free of hardcoded CSS, allowing developers to style badges using their own UI components (shadcn/ui, Radix, Tailwind, etc.).
+- **Synchronized with `@keybindy/core@2.0.0`**:
+  - Full support for `ignoreInputs`, `enableInInput`, and forgiving key aliases.
+
 ### [1.1.12] - 2025-09-21
 
 ### Changes

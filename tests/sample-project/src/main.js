@@ -17,7 +17,7 @@ manager.register(
 
 manager.register(
   ['D'],
-  e => {
+  () => {
     console.log('D key released!');
   },
   {
@@ -27,7 +27,7 @@ manager.register(
 
 manager.register(
   ['D'],
-  e => {
+  () => {
     console.log('D key pressed!');
   },
   {
@@ -82,7 +82,35 @@ manager.register(
     scope: 'lg',
   }
 );
+manager.register(
+  ['l', 'g'],
+  () => {
+    console.log('Sequential LG shortcut triggered from default!');
+  },
+  {
+    sequential: true,
+    sequenceDelay: 3000,
+  }
+);
 
-manager.setActiveScope('global');
+manager.register(
+  ['Ctrl', 'C'],
+  () => {
+    console.log('CTRL+C shortcut triggered!');
+  },
+  {
+    ignoreInputs: true,
+  }
+);
+
+// manager.setActiveScope('nono');
+
 // manager.disableAll();
 // Get all methods (including inherited ones)
+manager.setScopeMode('cascade');
+manager.setScopePriority(scope => ({ ...scope, global: 10 }));
+// manager.setScopePriority(scope => ({ ...scope, global: 10 }));
+// console.log(manager.getScopesInfo());
+// console.log(manager.getScopePriority());
+
+console.log(manager.getScopePriority());
