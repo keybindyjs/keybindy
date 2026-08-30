@@ -43,14 +43,7 @@ jobs:
           pnpm test
           pnpm build
 
-      - name: Create Release PR or Publish to NPM
-        id: changesets
-        uses: changesets/action@v1
-        with:
-          publish: pnpm release
-          version: pnpm version
-          title: 'chore(release): Version Packages'
-          commit: 'chore(release): Version Packages'
+      - name: Publish to NPM
+        run: pnpm --filter "./packages/**" publish --access public --no-git-checks
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
