@@ -12,6 +12,50 @@ import { useShortcutManager } from './useKeybindy';
 import type { KeybindyShortcut } from './types';
 
 /**
+ * Whether the current build is a production bundle.
+ * Written so bundlers (Next.js, Vite, webpack) can statically replace `process.env.NODE_ENV`,
+ * while plain browser environments without a `process` shim simply fall back to `false`.
+ */
+const isProductionBuild = (() => {
+  try {
+    return process.env.NODE_ENV === 'production';
+  } catch {
+    return false;
+  }
+})();
+
+/**
+ * Tracks how many mounted hooks currently register the same key combo in the same scope,
+ * so duplicates (which silently overwrite each other) can be reported in development.
+ */
+const activeRegistrations = new Map<string, number>();
+const duplicateWarnings = new Set<string>();
+
+const trackDuplicate = (scope: string, keys: ShortcutBinding): (() => void) => {
+  const signature = `${scope}::${JSON.stringify(keys)}`;
+  const count = (activeRegistrations.get(signature) ?? 0) + 1;
+  activeRegistrations.set(signature, count);
+
+  if (count > 1 && !duplicateWarnings.has(signature) && !isProductionBuild) {
+    duplicateWarnings.add(signature);
+    console.warn(
+      `[Keybindy] Duplicate shortcut detected: ${JSON.stringify(keys)} is registered by ${count} component instances in scope "${scope}". Only the most recent instance will fire. ` +
+        `If these are parallel instances of the same component (dialogs, pickers), pass { disabled: !isOpen } so only the active instance registers.`
+    );
+  }
+
+  return () => {
+    const remaining = (activeRegistrations.get(signature) ?? 1) - 1;
+    if (remaining <= 0) {
+      activeRegistrations.delete(signature);
+      duplicateWarnings.delete(signature);
+    } else {
+      activeRegistrations.set(signature, remaining);
+    }
+  };
+};
+
+/**
  * Options for `useShortcuts` hook.
  */
 export type UseShortcutsOptions = {
@@ -29,7 +73,9 @@ export type UseShortcutsOptions = {
   scopeMode?: ScopeMode;
 
   /**
-   * Whether all shortcuts in this scope should be disabled.
+   * Whether all shortcuts in this hook call should be disabled.
+   * A disabled hook registers nothing at all and never claims the active scope,
+   * so `disabled: !isOpen` is the recommended way to gate dialogs and pickers.
    * Defaults to `false`.
    */
   disabled?: boolean;
@@ -178,6 +224,10 @@ export const useShortcuts = (
   React.useEffect(() => {
     if (!manager) return;
 
+    // Disabled hooks register nothing and never claim the active scope, so
+    // parallel component instances (closed dialogs, hidden pickers) never collide.
+    if (disabled) return;
+
     let prevScopeMode: ScopeMode | undefined;
     if (scopeMode) {
       prevScopeMode = manager.getScopeMode();
@@ -201,16 +251,24 @@ export const useShortcuts = (
     );
 
     if (beforeEach) {
-      unregisterBefore = manager.beforeEach((shortcut, event) => {
-        return beforeEachRef.current ? beforeEachRef.current(shortcut, event) : undefined;
-      }, { scope, keys: hookKeys.length > 0 ? hookKeys : undefined });
+      unregisterBefore = manager.beforeEach(
+        (shortcut, event) => {
+          return beforeEachRef.current ? beforeEachRef.current(shortcut, event) : undefined;
+        },
+        { scope, keys: hookKeys.length > 0 ? hookKeys : undefined }
+      );
     }
 
     if (afterEach) {
-      unregisterAfter = manager.afterEach((shortcut, event) => {
-        if (afterEachRef.current) afterEachRef.current(shortcut, event);
-      }, { scope, keys: hookKeys.length > 0 ? hookKeys : undefined });
+      unregisterAfter = manager.afterEach(
+        (shortcut, event) => {
+          if (afterEachRef.current) afterEachRef.current(shortcut, event);
+        },
+        { scope, keys: hookKeys.length > 0 ? hookKeys : undefined }
+      );
     }
+
+    const stopTracking = stableShortcuts.map(({ keys }) => trackDuplicate(scope, keys));
 
     // Register shortcuts using the stable definitions.
     stableShortcuts.forEach(({ keys, options: opt }) => {
@@ -228,11 +286,7 @@ export const useShortcuts = (
       });
     });
 
-    if (disabled) {
-      manager.disableAll(scope);
-    } else {
-      manager.enableAll(scope);
-    }
+    manager.enableAll(scope);
 
     return () => {
       if (unregisterBefore) unregisterBefore();
@@ -246,17 +300,30 @@ export const useShortcuts = (
       if (typeof priority === 'number') {
         removeScopePriority(scope);
       }
+
       if (scope !== 'global') {
         const remaining = manager.getCheatSheet(scope);
         if (!remaining || remaining.length === 0) {
           popScope(scope);
         }
       }
+
       if (scopeMode && prevScopeMode !== undefined) {
         setScopeMode(prevScopeMode);
       }
+
+      stopTracking.forEach(stop => stop());
     };
-  }, [scope, manager, disabled, priority, scopeMode, Boolean(beforeEach), Boolean(afterEach), stableShortcuts]);
+  }, [
+    scope,
+    manager,
+    disabled,
+    priority,
+    scopeMode,
+    Boolean(beforeEach),
+    Boolean(afterEach),
+    stableShortcuts,
+  ]);
 };
 
 /**
@@ -294,17 +361,20 @@ export const useShortcut = (
   const handlerRef = React.useRef(handler);
   handlerRef.current = handler;
 
-  const shortcutsGetter = React.useCallback(() => [
-    {
-      keys,
-      handler: ((e, state) => {
-        if (handlerRef.current) {
-          (handlerRef.current as any)(e, state);
-        }
-      }) as ShortcutHandler,
-      options: shortcutOptions,
-    }
-  ], [JSON.stringify(keys), JSON.stringify(shortcutOptions)]);
+  const shortcutsGetter = React.useCallback(
+    () => [
+      {
+        keys,
+        handler: ((e, state) => {
+          if (handlerRef.current) {
+            (handlerRef.current as any)(e, state);
+          }
+        }) as ShortcutHandler,
+        options: shortcutOptions,
+      },
+    ],
+    [JSON.stringify(keys), JSON.stringify(shortcutOptions)]
+  );
 
   useShortcuts(shortcutsGetter, {
     scope,

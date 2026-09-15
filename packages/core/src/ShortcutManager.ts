@@ -18,6 +18,19 @@ import { EventEmitter } from './utils/eventemitter';
 import { Logger } from './utils/log';
 
 /**
+ * Whether the current build is a production bundle.
+ * Written so bundlers (Next.js, Vite, webpack) can statically replace `process.env.NODE_ENV`,
+ * while plain browser environments without a `process` shim simply fall back to `false`.
+ */
+const isProductionBuild = (() => {
+  try {
+    return process.env.NODE_ENV === 'production';
+  } catch {
+    return false;
+  }
+})();
+
+/**
  * Manages keyboard shortcuts with support for scopes, enabling/disabling,
  * dynamic registration, and cheat sheet generation.
  */
@@ -25,6 +38,7 @@ export class ShortcutManager extends ScopeManager {
   private shortcuts: Shortcut[] = [];
   private pressedKeys = new Set<string>();
   private activeHoldShortcuts = new Set<string>();
+  private warnedDuplicates = new Set<string>();
   private typingEmitter = new EventEmitter<{
     key: string;
     event: KeyboardEvent;
@@ -513,6 +527,27 @@ export class ShortcutManager extends ScopeManager {
       for (const combo of expandedCombos) {
         const normalized = combo.map(k => k.toLowerCase() as Keys);
 
+        const replaced = this.shortcuts.filter(
+          s =>
+            JSON.stringify(s.keys) === JSON.stringify(normalized) &&
+            (s.options?.scope || 'global') === targetScope &&
+            s.id !== id
+        );
+
+        const duplicateSignature = `${targetScope}::${JSON.stringify(normalized)}`;
+        if (
+          replaced.length > 0 &&
+          !this.warnedDuplicates.has(duplicateSignature) &&
+          !isProductionBuild
+        ) {
+          this.warnedDuplicates.add(duplicateSignature);
+          console.warn(
+            `[Keybindy] Duplicate binding ${JSON.stringify(normalized)} in scope "${targetScope}" was overwritten. ` +
+              `The previous registration has been replaced and will never fire. ` +
+              `If this is a repeated component instance, give it its own scope or avoid registering while inactive.`
+          );
+        }
+
         this.shortcuts = this.shortcuts.filter(
           s =>
             JSON.stringify(s.keys) !== JSON.stringify(normalized) ||
@@ -683,6 +718,7 @@ export class ShortcutManager extends ScopeManager {
     this.resetScope();
     this.activeSequences = [];
     this.activeHoldShortcuts.clear();
+    this.warnedDuplicates.clear();
     this.logger.log('Instance destroyed');
   }
 
