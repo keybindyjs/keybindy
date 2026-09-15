@@ -76,8 +76,12 @@ describe('<Keybindy /> Component', () => {
     );
 
     await waitFor(() => {
-      expect(mockManagerInstance.beforeEach).toHaveBeenCalledWith(expect.any(Function), { scope: 'canvas' });
-      expect(mockManagerInstance.afterEach).toHaveBeenCalledWith(expect.any(Function), { scope: 'canvas' });
+      expect(mockManagerInstance.beforeEach).toHaveBeenCalledWith(expect.any(Function), {
+        scope: 'canvas',
+      });
+      expect(mockManagerInstance.afterEach).toHaveBeenCalledWith(expect.any(Function), {
+        scope: 'canvas',
+      });
     });
 
     unmount();
@@ -150,11 +154,15 @@ describe('<Keybindy /> Component', () => {
     expect(mockManagerInstance.setScopeMode).toHaveBeenCalledWith('default');
   });
 
-  it('should disable all shortcuts when disabled prop is true', async () => {
-    render(<Keybindy scope="test" disabled />);
-    await waitFor(() => {
-      expect(mockManagerInstance.disableAll).toHaveBeenCalledWith('test');
-    });
+  it('should register nothing when disabled prop is true', async () => {
+    render(
+      <Keybindy scope="test" disabled shortcuts={[{ keys: ['Ctrl', 'S'], handler: () => {} }]} />
+    );
+
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    expect(mockManagerInstance.register).not.toHaveBeenCalled();
+    expect(mockManagerInstance.disableAll).not.toHaveBeenCalled();
   });
 
   it('should handle shortcuts as a function', async () => {
@@ -198,19 +206,21 @@ describe('useShortcut and useShortcuts Hooks', () => {
 
   it('useShortcuts should register array of shortcuts and clean up on unmount', async () => {
     const { unmount } = renderHook(() =>
-      useShortcuts([
-        { keys: ['Esc'], handler: () => {} },
-        { keys: ['Enter'], handler: () => {} },
-      ], { scope: 'modal' })
+      useShortcuts(
+        [
+          { keys: ['Esc'], handler: () => {} },
+          { keys: ['Enter'], handler: () => {} },
+        ],
+        { scope: 'modal' }
+      )
     );
 
     await waitFor(() => {
       expect(mockManagerInstance.register).toHaveBeenCalledTimes(2);
-      expect(mockManagerInstance.register).toHaveBeenCalledWith(
-        ['Esc'],
-        expect.any(Function),
-        { scope: 'modal', ignoreInputs: undefined }
-      );
+      expect(mockManagerInstance.register).toHaveBeenCalledWith(['Esc'], expect.any(Function), {
+        scope: 'modal',
+        ignoreInputs: undefined,
+      });
     });
 
     unmount();
@@ -265,5 +275,3 @@ describe('useShortcutManager and useKeybindy Hook', () => {
     expect(mockManagerInstance.afterEach).toHaveBeenCalledWith(afterFn, { scope: 'canvas' });
   });
 });
-
-

@@ -15,6 +15,7 @@
 ---
 
 Most React keyboard shortcut hooks fail in subtle, frustrating ways:
+
 1. **The "Blinking" Problem**: Every state change re-renders the component, causing the hook to unregister and re-register the hotkey. Rapid typing or animations cause micro-gaps where shortcuts are dropped.
 2. **Stale Closures**: Forgetting to update dependency arrays traps shortcuts with initial state values.
 3. **Modal Leaks**: Closing a dialog forgets to re-enable background shortcuts or corrupts the active scope.
@@ -62,17 +63,28 @@ function DocumentEditor() {
   const [content, setContent] = useState('');
 
   // ⚡️ Always accesses the latest `content` state without re-registering!
-  useShortcut(['Ctrl', 'S'], (event) => {
-    saveDocument(content);
-  }, {
-    preventDefault: true,
-    ignoreInputs: true, // Won't trigger if user is typing in a textarea
-  });
+  useShortcut(
+    ['Ctrl', 'S'],
+    event => {
+      saveDocument(content);
+    },
+    {
+      preventDefault: true,
+      ignoreInputs: true, // Won't trigger if user is typing in a textarea
+    }
+  );
 
   // Cross-platform Command/Ctrl + K
-  useShortcut([['Meta', 'K'], ['Ctrl', 'K']], () => {
-    openSearchPalette();
-  }, { preventDefault: true });
+  useShortcut(
+    [
+      ['Meta', 'K'],
+      ['Ctrl', 'K'],
+    ],
+    () => {
+      openSearchPalette();
+    },
+    { preventDefault: true }
+  );
 
   return <textarea value={content} onChange={e => setContent(e.target.value)} />;
 }
@@ -88,31 +100,34 @@ Great for components with many hotkeys (e.g. video players, canvas apps, tables)
 import { useShortcuts } from '@keybindy/react';
 
 function VideoPlayer({ isPlaying, onPlayPause, onSeekForward, onSeekBackward }) {
-  useShortcuts([
+  useShortcuts(
+    [
+      {
+        keys: ['Space'],
+        handler: onPlayPause,
+        options: { preventDefault: true },
+      },
+      {
+        keys: ['ArrowRight'],
+        handler: () => onSeekForward(5),
+        options: { preventDefault: true },
+      },
+      {
+        keys: ['ArrowLeft'],
+        handler: () => onSeekBackward(5),
+        options: { preventDefault: true },
+      },
+      {
+        // Push-to-talk / Hold action
+        keys: ['M'],
+        handler: (e, state) => setTemporaryMute(state === 'down'),
+        options: { hold: true },
+      },
+    ],
     {
-      keys: ['Space'],
-      handler: onPlayPause,
-      options: { preventDefault: true },
-    },
-    {
-      keys: ['ArrowRight'],
-      handler: () => onSeekForward(5),
-      options: { preventDefault: true },
-    },
-    {
-      keys: ['ArrowLeft'],
-      handler: () => onSeekBackward(5),
-      options: { preventDefault: true },
-    },
-    {
-      // Push-to-talk / Hold action
-      keys: ['M'],
-      handler: (e, state) => setTemporaryMute(state === 'down'),
-      options: { hold: true },
-    },
-  ], {
-    scope: 'video-player',
-  });
+      scope: 'video-player',
+    }
+  );
 
   return <div>{/* Player UI */}</div>;
 }
@@ -147,28 +162,68 @@ function App() {
 
 ---
 
+## 🧬 Duplicate Component Instances (Dialogs, Pickers, Rows)
+
+If several copies of the same component are mounted at once — multiple media pickers, hidden dialogs, list rows, desktop + mobile layouts — they would normally all register the same keys and silently overwrite each other. Only the last mounted instance would ever fire, usually with the wrong component's state.
+
+Gate registration with `disabled` so only the instance that should listen is registered:
+
+```tsx
+function MediaPicker({ isOpen, onClose }) {
+  const [selected, setSelected] = useState<Map<string, string>>(new Map());
+
+  useShortcuts(
+    [
+      {
+        keys: ['Enter'],
+        handler: () => {
+          onSelect([...selected.values()]);
+          onClose();
+        },
+      },
+    ],
+    {
+      disabled: !isOpen, // register only while this instance is open
+    }
+  );
+
+  if (!isOpen) return null;
+  return <div className="picker">{/* ... */}</div>;
+}
+```
+
+- **Disabled hooks register nothing** — a closed picker can never steal `Enter`, and it never claims the active scope.
+- **No collisions** — an inactive instance does not overwrite the active one, and unmounting it never kills other bindings.
+- In development, `@keybindy/react` also prints a warning when duplicate registrations are detected, pointing you to `disabled`.
+
+---
+
 ## 🎯 Scoping: Modals vs. Layered Tools
 
 ### A. Modal Isolation (`default` mode)
+
 When opening a modal or dialog, you want to **trap hotkeys** so background shortcuts cannot fire. When the modal unmounts, background shortcuts are automatically restored:
 
 ```tsx
 function DeleteConfirmationModal({ isOpen, onClose, onDelete }) {
   // Opening this modal automatically deactivates global shortcuts
-  useShortcuts([
+  useShortcuts(
+    [
+      {
+        keys: ['Enter'],
+        handler: onDelete,
+      },
+      {
+        keys: ['Esc'],
+        handler: onClose,
+        options: { enableInInput: true }, // Escape works even inside modal inputs
+      },
+    ],
     {
-      keys: ['Enter'],
-      handler: onDelete,
-    },
-    {
-      keys: ['Esc'],
-      handler: onClose,
-      options: { enableInInput: true }, // Escape works even inside modal inputs
-    },
-  ], {
-    scope: 'delete-dialog',
-    disabled: !isOpen,
-  });
+      scope: 'delete-dialog',
+      disabled: !isOpen,
+    }
+  );
 
   if (!isOpen) return null;
   return <div className="modal">Are you sure?</div>;
@@ -178,16 +233,21 @@ function DeleteConfirmationModal({ isOpen, onClose, onDelete }) {
 ---
 
 ### B. Layered Tools with Priority (`cascade` mode)
+
 In Figma / Photoshop style apps, global canvas shortcuts (like `Space` to pan or `Z` to zoom) should continue working while editing in a sub-tool, but sub-tool shortcuts should override colliding keys:
 
 ```tsx
 // 1. Root Canvas (in cascade mode)
 function CanvasApp() {
   return (
-    <Keybindy scopeMode="cascade" scope="canvas" shortcuts={[
-      { keys: ['Space'], handler: panCanvas, options: { hold: true } },
-      { keys: ['V'], handler: selectTool },
-    ]}>
+    <Keybindy
+      scopeMode="cascade"
+      scope="canvas"
+      shortcuts={[
+        { keys: ['Space'], handler: panCanvas, options: { hold: true } },
+        { keys: ['V'], handler: selectTool },
+      ]}
+    >
       <Toolbox />
       <TextLayerEditor />
     </Keybindy>
@@ -196,24 +256,25 @@ function CanvasApp() {
 
 // 2. Focused Text Layer (higher priority weight)
 function TextLayerEditor() {
-  useShortcuts([
+  useShortcuts(
+    [
+      {
+        keys: ['V'], // Overrides global 'V' tool while text editor is focused
+        handler: pastePlainText,
+      },
+    ],
     {
-      keys: ['V'], // Overrides global 'V' tool while text editor is focused
-      handler: pastePlainText,
+      scope: 'text-editor',
+      priority: 100, // Higher priority wins colliding keys
     }
-  ], {
-    scope: 'text-editor',
-    priority: 100, // Higher priority wins colliding keys
-  });
+  );
 }
 
 // 3. Isolated Modal inside a cascading app
 function SettingsModal({ isOpen, onClose }) {
   // 💡 Want to trap shortcuts in a specific modal and block parent cascading?
   // Pass scopeMode="default" to isolate this child from parent shortcuts!
-  useShortcuts([
-    { keys: ['Esc'], handler: onClose, options: { enableInInput: true } }
-  ], {
+  useShortcuts([{ keys: ['Esc'], handler: onClose, options: { enableInInput: true } }], {
     scope: 'settings-modal',
     scopeMode: 'default', // Traps shortcuts: parent canvas keys won't fire
     disabled: !isOpen,
@@ -279,7 +340,8 @@ function ShortcutsHelpModal() {
   );
 }
 ```
-*(Note: `useKeybindy` is retained as an exact alias to `useShortcutManager`)*.
+
+_(Note: `useKeybindy` is retained as an exact alias to `useShortcutManager`)_.
 
 ---
 
@@ -301,21 +363,21 @@ useShortcut(['Esc'], clearSearch, { enableInInput: true });
 
 ### `useShortcut(keys, handler, options?)`
 
-| Option | Type | Default | Description |
-| :--- | :--- | :--- | :--- |
-| `scope` | `string` | `'global'` | Scope context for the shortcut. |
-| `scopeMode` | `'default' \| 'cascade'` | `'default'` | Scope resolution behavior. |
-| `priority` | `number` | `undefined` | Numeric priority weight for cascade mode (e.g. `100`). |
-| `disabled` | `boolean` | `false` | Disable the shortcut without unmounting. |
-| `preventDefault` | `boolean` | `false` | Calls `event.preventDefault()`. |
-| `stopPropagation` | `boolean` | `false` | Calls `event.stopPropagation()`. |
-| `sequential` | `boolean` | `false` | Treat keys as a sequence (e.g. `['G', 'D']`). |
-| `sequenceDelay` | `number` | `1000` | Max milliseconds between sequential keys. |
-| `hold` | `boolean` | `false` | Triggers handler with `state: 'down' \| 'up'`. |
-| `repeat` | `boolean` | `false` | Allow continuous firing when holding key. |
-| `ignoreInputs` | `boolean` | `false` | Ignore shortcut when typing in inputs/textareas. |
-| `enableInInput` | `boolean` | `false` | Explicitly enable shortcut while typing in inputs. |
-| `data` | `object` | `{}` | Custom metadata for cheat sheets. |
+| Option            | Type                     | Default     | Description                                                        |
+| :---------------- | :----------------------- | :---------- | :----------------------------------------------------------------- |
+| `scope`           | `string`                 | `'global'`  | Scope context for the shortcut.                                    |
+| `scopeMode`       | `'default' \| 'cascade'` | `'default'` | Scope resolution behavior.                                         |
+| `priority`        | `number`                 | `undefined` | Numeric priority weight for cascade mode (e.g. `100`).             |
+| `disabled`        | `boolean`                | `false`     | Unregister the shortcut entirely without unmounting the component. |
+| `preventDefault`  | `boolean`                | `false`     | Calls `event.preventDefault()`.                                    |
+| `stopPropagation` | `boolean`                | `false`     | Calls `event.stopPropagation()`.                                   |
+| `sequential`      | `boolean`                | `false`     | Treat keys as a sequence (e.g. `['G', 'D']`).                      |
+| `sequenceDelay`   | `number`                 | `1000`      | Max milliseconds between sequential keys.                          |
+| `hold`            | `boolean`                | `false`     | Triggers handler with `state: 'down' \| 'up'`.                     |
+| `repeat`          | `boolean`                | `false`     | Allow continuous firing when holding key.                          |
+| `ignoreInputs`    | `boolean`                | `false`     | Ignore shortcut when typing in inputs/textareas.                   |
+| `enableInInput`   | `boolean`                | `false`     | Explicitly enable shortcut while typing in inputs.                 |
+| `data`            | `object`                 | `{}`        | Custom metadata for cheat sheets.                                  |
 
 ---
 

@@ -1,5 +1,12 @@
 # @keybindy/core
 
+## [2.0.2] - 2026-09-15
+
+### Improvements & Fixes
+
+- `register()` now logs a development warning when a registration overwrites an existing binding for the same keys and scope, instead of replacing it silently.
+
+
 ## [2.0.1] - 2026-08-30
 
 ### Improvements & Fixes

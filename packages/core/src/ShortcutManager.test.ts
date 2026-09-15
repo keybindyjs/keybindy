@@ -632,14 +632,20 @@ describe('ShortcutManager', () => {
       manager.register(['B'], globalHandler, { scope: 'global' });
 
       // Scoped hook only for canvas
-      manager.beforeEach(() => {
-        canvasOrder.push('canvas-before');
-      }, { scope: 'canvas' });
+      manager.beforeEach(
+        () => {
+          canvasOrder.push('canvas-before');
+        },
+        { scope: 'canvas' }
+      );
 
       // Key-filtered hook only for 'B'
-      manager.beforeEach(() => {
-        globalOrder.push('b-before');
-      }, { keys: ['B'] });
+      manager.beforeEach(
+        () => {
+          globalOrder.push('b-before');
+        },
+        { keys: ['B'] }
+      );
 
       // Trigger 'B' (global)
       manager.setActiveScope('global');
@@ -697,12 +703,50 @@ describe('ShortcutManager', () => {
       expect(dgBeforeHook).not.toHaveBeenCalled();
     });
   });
+
+  describe('duplicate registration', () => {
+    it('should warn when a binding is overwritten in the same scope', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      manager.register(['A'], vi.fn());
+      manager.register(['A'], vi.fn());
+
+      const warnings = warnSpy.mock.calls.filter(([msg]) =>
+        String(msg).includes('was overwritten')
+      );
+      expect(warnings).toHaveLength(1);
+
+      warnSpy.mockRestore();
+    });
+
+    it('should not warn when the same combo is registered in different scopes', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+      manager.register(['A'], vi.fn(), { scope: 'global' });
+      manager.register(['A'], vi.fn(), { scope: 'editor' });
+
+      const warnings = warnSpy.mock.calls.filter(([msg]) =>
+        String(msg).includes('was overwritten')
+      );
+      expect(warnings).toHaveLength(0);
+
+      warnSpy.mockRestore();
+    });
+
+    it('should only fire the most recently registered handler', () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const first = vi.fn();
+      const second = vi.fn();
+
+      manager.register(['A'], first);
+      manager.register(['A'], second);
+
+      dispatchKeyEvent('keydown', 'KeyA');
+
+      expect(first).not.toHaveBeenCalled();
+      expect(second).toHaveBeenCalledOnce();
+
+      warnSpy.mockRestore();
+    });
+  });
 });
-
-
-
-
-
-
-
-

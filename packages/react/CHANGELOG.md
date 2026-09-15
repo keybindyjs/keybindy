@@ -1,5 +1,12 @@
 # @keybindy/react
 
+## [2.0.2] - 2026-09-15
+
+### Improvements & Fixes
+
+- **`disabled` no longer disables sibling shortcuts.** When a hook is disabled it now registers nothing and never claims the active scope, so `{ disabled: !isOpen }` is the recommended way to gate dialogs, pickers, and other parallel component instances — an inactive copy can no longer steal keys from the active one, and unmounting it leaves other bindings intact.
+- **Development warning for duplicate registrations** — when two hooks register the same keys in the same scope, a single actionable warning is printed instead of failing silently. The warning re-arms once all colliding registrations unmount.
+
 ## [2.0.1] - 2026-08-30
 
 ### Improvements & Fixes
